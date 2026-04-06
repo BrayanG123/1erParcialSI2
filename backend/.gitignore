@@ -1,4 +1,59 @@
-venv/
-__pycache__/
 *.pyc
+.md
+
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Variables de entorno (MUY IMPORTANTE)
 .env
+
+# Archivos de base de datos locales (por si usas sqlite en pruebas)
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.swp
+*.swo
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Cache de FastAPI / Python
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# Archivos de coverage (tests)
+.coverage
+htmlcov/
+
+# Archivos de migraciones (opcional, depende si usas Alembic)
+# Si quieres guardar migraciones, comenta esto
+alembic/versions/*.pyc
+
+# Archivos compilados
+*.so
+
+# Node (por si tienes algo mezclado)
+node_modules/
+
+# Docker (opcional)
+docker-compose.override.yml
