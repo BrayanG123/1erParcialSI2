@@ -1,0 +1,39 @@
+# FastAPI: Framework web moderno y rápido para construir APIs con Python 3.8+
+# Maneja rutas, validación automática con Pydantic, documentación interactiva (Swagger UI)
+fastapi==0.115.12
+
+# Uvicorn: Servidor ASGI de alto rendimiento para ejecutar aplicaciones FastAPI
+# [standard] incluye dependencias extras como watchfiles (recarga automática) y websockets
+uvicorn[standard]==0.34.0
+
+# SQLAlchemy: ORM (Object Relational Mapper) para interactuar con bases de datos
+# Permite definir modelos como clases Python y genera SQL automáticamente
+sqlalchemy==2.0.40
+
+# Alembic: Herramienta de migraciones para SQLAlchemy
+# Permite versionar y aplicar cambios a la estructura de la base de datos (crear tablas, modificar columnas)
+alembic==1.14.1
+
+# Psycopg2-binary: Adaptador de PostgreSQL para Python (versión binaria precompilada)
+# Conecta SQLAlchemy con PostgreSQL de forma eficiente
+psycopg2-binary==2.9.10
+
+# Pydantic Settings: Manejo de configuraciones desde variables de entorno y archivos .env
+# Ideal para cargar settings de la app (URL de BD, claves secretas, etc.) de forma tipada
+pydantic-settings==2.9.0
+
+# Python-dotenv: Carga variables de entorno desde archivo .env
+# Lee el archivo .env y las inyecta en os.environ para que otras librerías las usen
+python-dotenv==1.1.0
+
+# Passlib: Biblioteca para hashear y verificar contraseñas de forma segura
+# [bcrypt] incluye el algoritmo bcrypt, el más recomendado para contraseñas hoy en día
+passlib[bcrypt]==1.7.4
+
+# Python-jose: Implementación de JOSE (JSON Object Signing and Encryption)
+# [cryptography] permite crear y validar tokens JWT para autenticación con algoritmos seguros
+python-jose[cryptography]==3.4.0
+
+# Python-multipart: Procesa formularios multipart (archivos y datos mixtos)
+# Necesario para que FastAPI reciba archivos (upload) y datos de formularios HTML
+python-multipart==0.0.20
