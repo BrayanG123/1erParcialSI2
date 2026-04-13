@@ -48,7 +48,7 @@ class Cliente(Base):
 
     # relacion inversa hacia Usuario
     usuario = relationship("Usuario", back_populates="perfil_cliente")
-
+    vehiculos = relationship("Vehiculo", back_populates="cliente")
 
 # tabla perfil: mecanicos
 class Mecanico(Base):
@@ -56,6 +56,7 @@ class Mecanico(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), unique=True, nullable=False)
+    taller_id = Column(Integer, ForeignKey("talleres.id", ondelete="SET NULL"), nullable=True) 
     especialidad = Column(String(200), nullable=True)
     estado = Column(String(50), default="disponible", nullable=False)
     telefono = Column(String(20), nullable=True)
@@ -67,6 +68,8 @@ class Mecanico(Base):
     # Relacion inversa hacia Usuario
     usuario = relationship("Usuario", back_populates="perfil_mecanico")
 
+    taller = relationship("Taller", back_populates="mecanicos")
+
 
 # Tabla de perfil: administradores
 class Administrador(Base):
@@ -77,3 +80,6 @@ class Administrador(Base):
 
     # Relacion inversa hacia usuario
     usuario = relationship("Usuario", back_populates="perfil_administrador")
+
+    # Relacion inversa hacia taller
+    taller = relationship("Taller", back_populates="administrador", uselist=False)
