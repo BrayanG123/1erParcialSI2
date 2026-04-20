@@ -33,7 +33,7 @@ def get_incidentes_de_cliente(db: Session, cliente_id: int) -> list[Incidente]:
     )
 
 
-def get_incidentes_pendientes(db: Session) -> list[Incidente]:
+def get_incidentes_disponibles(db: Session) -> list[Incidente]:
     """Incidentes visibles para los administradores de taller (como pasajeros esperando en Uber)."""
     return (
         db.query(Incidente)

@@ -11,7 +11,7 @@ from app.crud.usuario import (
     get_usuario_by_username,
     crear_usuario,
 )
-from app.core.security import verify_password, crear_access_token, crear_refresh_token, decodificar_token, get_password_hash
+from app.core.security import verify_password, crear_access_token, crear_refresh_token, decodificar_token, hash_password
 from jose import JWTError
 from app.services.bitacora import BitacoraService
 
@@ -181,7 +181,7 @@ def registro_admin_con_taller(datos: AdminConTallerCreate, db: Session = Depends
         apellido=datos.apellido,
         email=datos.email,
         username=datos.username,
-        password_hash=get_password_hash(datos.password),
+        password_hash=hash_password(datos.password),
         rol=RolUsuario.administrador,
     )
     db.add(nuevo_usuario)
