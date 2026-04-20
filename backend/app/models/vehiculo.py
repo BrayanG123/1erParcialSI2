@@ -15,5 +15,4 @@ class Vehiculo(Base):
     tipo_seguro = Column(String(100), nullable=True)
 
     cliente = relationship("Cliente", back_populates="vehiculos")
-
-    
+    incidentes = relationship("Incidente", back_populates="vehiculo")

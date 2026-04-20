@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr, field_validator
 import re
 
 from app.models.usuario import RolUsuario
+from app.schemas.taller import TallerCreate
 
 
 # Base: campos cimunes a varios schemas
@@ -87,6 +88,38 @@ class MecanicoRead(BaseModel):
     longitud: Optional[float]
 
     model_config = {"from_attributes": True}
+
+
+class AdminConTallerCreate(BaseModel):
+    # Datos del usuario administrador
+    nombre:   str
+    apellido: str
+    email:    EmailStr
+    username: str
+    password: str
+
+    # Datos del taller
+    nombre_taller:    str
+    direccion_taller: str
+    telefono_taller:  Optional[str] = None
+    latitud_taller:   Optional[float] = None
+    longitud_taller:  Optional[float] = None
+
+    @field_validator("password")
+    @classmethod
+    def validar_password(cls, v: str) -> str:
+        if len(v) < 5:
+            raise ValueError("La contraseña debe tener al menos 5 caracteres")
+        return v
+
+    @field_validator("username")
+    @classmethod
+    def validar_username(cls, v: str) -> str:
+        import re
+        if not re.match(r"^[a-zA-Z0-9_]{3,50}$", v):
+            raise ValueError("El username solo puede tener letras, números y guiones bajos (3-50 caracteres)")
+        return v
+
 
 
 # SCHEMA COMPUESTO - usuario con su perfil incluido

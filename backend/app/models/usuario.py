@@ -49,6 +49,7 @@ class Cliente(Base):
     # relacion inversa hacia Usuario
     usuario = relationship("Usuario", back_populates="perfil_cliente")
     vehiculos = relationship("Vehiculo", back_populates="cliente")
+    incidentes = relationship("Incidente", back_populates="cliente")
 
 # tabla perfil: mecanicos
 class Mecanico(Base):
@@ -67,8 +68,8 @@ class Mecanico(Base):
 
     # Relacion inversa hacia Usuario
     usuario = relationship("Usuario", back_populates="perfil_mecanico")
-
     taller = relationship("Taller", back_populates="mecanicos")
+    asignaciones = relationship("AsignacionServicio", back_populates="mecanico")
 
 
 # Tabla de perfil: administradores
