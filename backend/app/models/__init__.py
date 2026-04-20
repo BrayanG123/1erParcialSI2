@@ -6,3 +6,7 @@ from app.models.bitacora import Bitacora
 from app.models.categoria import Categoria
 from app.models.incidente import Incidente, EstadoIncidente
 from app.models.asignacion_servicio import AsignacionServicio, EstadoAsignacion
+from app.models.servicio_realizado import ServicioRealizado
+from app.models.pago import Pago, EstadoPago, MetodoPago
+from app.models.comision import Comision
+from app.models.calificacion import Calificacion

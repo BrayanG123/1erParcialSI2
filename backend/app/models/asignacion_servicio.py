@@ -44,3 +44,8 @@ class AsignacionServicio(Base):
     # --- Relaciones ---
     incidente = relationship("Incidente", back_populates="asignacion")
     mecanico  = relationship("Mecanico",  back_populates="asignaciones")
+    servicio_realizado = relationship(
+        "ServicioRealizado",
+        back_populates="asignacion",
+        uselist=False   # 1:1 — devuelve un objeto, no una lista
+    )

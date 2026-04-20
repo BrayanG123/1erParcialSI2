@@ -2,7 +2,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.models import Base
-from app.routers import auth, usuarios, admin, incidente, categoria, asignacion_servicio
+from app.routers import (
+    auth,
+    usuarios,
+    admin,
+    incidente,
+    categoria,
+    asignacion_servicio,
+    servicio_realizado,
+    pago,
+    comision,
+    calificacion
+ )
 
 
 app = FastAPI(
@@ -30,6 +41,10 @@ app.include_router(admin.router)
 app.include_router(incidente.router)
 app.include_router(categoria.router)
 app.include_router(asignacion_servicio.router)
+app.include_router(servicio_realizado.router)
+app.include_router(pago.router)
+app.include_router(comision.router)
+app.include_router(calificacion.router)
 
 
 @app.get("/")
