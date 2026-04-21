@@ -12,7 +12,9 @@ from app.routers import (
     servicio_realizado,
     pago,
     comision,
-    calificacion
+    calificacion,
+    evidencia,
+    historial_estado
  )
 
 
@@ -45,6 +47,8 @@ app.include_router(servicio_realizado.router)
 app.include_router(pago.router)
 app.include_router(comision.router)
 app.include_router(calificacion.router)
+app.include_router(evidencia.router)
+app.include_router(historial_estado.router)
 
 
 @app.get("/")

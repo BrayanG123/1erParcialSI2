@@ -49,3 +49,8 @@ class AsignacionServicio(Base):
         back_populates="asignacion",
         uselist=False   # 1:1 — devuelve un objeto, no una lista
     )
+    historial = relationship(
+        "HistorialEstado",
+        back_populates="asignacion",
+        order_by="HistorialEstado.fecha_cambio"
+    )

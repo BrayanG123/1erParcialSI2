@@ -10,3 +10,6 @@ from app.models.servicio_realizado import ServicioRealizado
 from app.models.pago import Pago, EstadoPago, MetodoPago
 from app.models.comision import Comision
 from app.models.calificacion import Calificacion
+from app.models.evidencia import Evidencia
+from app.models.historial_estado import HistorialEstado
+# from app.models.procesamiento_ia import ProcesamientoIA, EstadoProcesamiento

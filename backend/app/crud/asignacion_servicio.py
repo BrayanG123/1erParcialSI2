@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.asignacion_servicio import AsignacionServicio, EstadoAsignacion
 from app.schemas.asignacion_servicio import AsignacionCreate, AsignacionEstadoUpdate
+from app.models.historial_estado import HistorialEstado
 
 
 def crear_asignacion(db: Session, datos: AsignacionCreate) -> AsignacionServicio:
@@ -62,8 +63,18 @@ def rechazar_asignacion(
 
 
 def actualizar_estado_asignacion(
-    db: Session, asignacion: AsignacionServicio, datos: AsignacionEstadoUpdate
+    db: Session, 
+    asignacion: AsignacionServicio, 
+    datos: AsignacionEstadoUpdate
 ) -> AsignacionServicio:
+    # Registrar el cambio en el historial ANTES de actualizar
+    historial = HistorialEstado(
+        asignacion_id=asignacion.id,
+        estado_anterior=asignacion.estado.value if asignacion.estado else None,
+        estado_actual=datos.estado.value,
+    )
+    db.add(historial)
+    
     asignacion.estado = datos.estado
     db.commit()
     db.refresh(asignacion)
