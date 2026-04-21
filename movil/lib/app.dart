@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:movil/config/theme.dart';
+import 'package:movil/config/routes.dart';
 
 class AuxilioApp extends StatelessWidget {
   const AuxilioApp({super.key});
@@ -7,18 +8,11 @@ class AuxilioApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Auxilio Vehicular',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)),
-        useMaterial3: true,
-      ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('hola mundo'),
-        ),
-      ),
+      theme: AppTheme.light,
+      routerConfig: appRouter,
     );
   }
 }
