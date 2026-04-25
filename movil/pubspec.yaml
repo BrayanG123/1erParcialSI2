@@ -57,17 +57,17 @@ dependencies:
   google_maps_flutter: ^2.10.0
 
   # --- Ubicación GPS ---
-  geolocator: ^13.0.2
+  # geolocator: ^13.0.4
   permission_handler: ^11.3.1
 
   # --- Cámara / galería ---
   image_picker: ^1.1.2
 
   # --- Grabación de audio ---
-  record: ^5.2.0
+  # record: ^5.2.1 comentado porq me esta dando problemas
 
   # --- Speech to text ---
-  speech_to_text: ^7.0.0
+  # speech_to_text: ^7.3.0
 
   # --- Pagos Stripe ---
   flutter_stripe: ^11.1.0
@@ -76,6 +76,7 @@ dependencies:
   intl: ^0.19.0
   equatable: ^2.0.5
 
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
