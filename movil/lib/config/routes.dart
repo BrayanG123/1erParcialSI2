@@ -7,7 +7,7 @@ import 'package:movil/features/auth/screens/splash_screen.dart';
 import 'package:movil/features/home/screens/home_cliente_screen.dart';
 import 'package:movil/features/home/screens/home_mecanico_screen.dart';
 import 'package:movil/features/cliente/screens/solicitar_auxilio_screen.dart';
-
+import 'package:movil/features/mecanico/screens/detalle_asignacion_screen.dart';
 
 
 
@@ -20,6 +20,7 @@ class AppRoutes {
   static const homeCliente   = 'home-cliente';
   static const homeMecanico  = 'home-mecanico';
   static const solicitarAuxilio = 'solicitar-auxilio';
+  static const detalleAsignacion = 'detalle-asignacion';
 }
 
 final appRouter = GoRouter(
@@ -68,6 +69,14 @@ final appRouter = GoRouter(
       path: '/auxilio/nuevo',
       name: AppRoutes.solicitarAuxilio,
       builder: (context, state) => const SolicitarAuxilioScreen(),
+    ),
+    GoRoute(
+      path: '/mecanico/asignacion/:id',
+      name: AppRoutes.detalleAsignacion,
+      builder: (context, state) {
+        final id = state.extra as int;
+        return DetalleAsignacionScreen(asignacionId: id);
+      },
     ),
   ],
 
