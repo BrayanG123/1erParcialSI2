@@ -26,7 +26,9 @@ class TallerUpdate(BaseModel):
 
 class TallerRead(TallerBase):
     id: int
-    administrador_id: Optional[int] = None
+    administrador_id:      Optional[int]   = None
     calificacion_promedio: Optional[float] = 0.0
+
+    model_config = {"from_attributes": True}
 
     model_config = {"from_attributes": True}

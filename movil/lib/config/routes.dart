@@ -4,10 +4,13 @@ import 'package:movil/features/auth/screens/register_cliente_screen.dart';
 import 'package:movil/features/auth/screens/register_mecanico_screen.dart';
 import 'package:movil/features/auth/screens/register_screen.dart';
 import 'package:movil/features/auth/screens/splash_screen.dart';
-import 'package:movil/features/home/screens/home_cliente_screen.dart';
-import 'package:movil/features/home/screens/home_mecanico_screen.dart';
+import 'package:movil/features/cliente/screens/form_vehiculo_screen.dart';
+import 'package:movil/features/cliente/screens/home_cliente_screen.dart';
 import 'package:movil/features/cliente/screens/solicitar_auxilio_screen.dart';
+import 'package:movil/features/cliente/screens/vehiculos_screen.dart';
 import 'package:movil/features/mecanico/screens/detalle_asignacion_screen.dart';
+import 'package:movil/features/mecanico/screens/home_mecanico_screen.dart';
+import 'package:movil/models/vehiculo.dart';
 
 
 
@@ -21,6 +24,10 @@ class AppRoutes {
   static const homeMecanico  = 'home-mecanico';
   static const solicitarAuxilio = 'solicitar-auxilio';
   static const detalleAsignacion = 'detalle-asignacion';
+  static const vehiculos       = 'vehiculos';
+  static const vehiculosPath   = '/cliente/vehiculos';  // constante de path base
+  static const nuevoVehiculo   = 'nuevo-vehiculo';
+  static const editarVehiculo  = 'editar-vehiculo';
 }
 
 final appRouter = GoRouter(
@@ -78,6 +85,29 @@ final appRouter = GoRouter(
         return DetalleAsignacionScreen(asignacionId: id);
       },
     ),
+
+    GoRoute(
+      path: '/cliente/vehiculos',
+      name: AppRoutes.vehiculos,
+      builder: (context, state) => const VehiculosScreen(),
+      routes: [
+        GoRoute(
+          path: 'nuevo',
+          name: AppRoutes.nuevoVehiculo,
+          builder: (context, state) => const FormVehiculoScreen(),
+        ),
+        GoRoute(
+          path: ':id/editar',
+          name: AppRoutes.editarVehiculo,
+          builder: (context, state) {
+            final vehiculo = state.extra as Vehiculo;
+            return FormVehiculoScreen(vehiculo: vehiculo);
+          },
+        ),
+      ],
+    ),
+
+
   ],
 
   

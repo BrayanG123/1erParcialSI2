@@ -39,6 +39,11 @@ class _HomeClienteView extends StatelessWidget {
         title: Text('Hola, $nombre'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.directions_car_outlined),
+            tooltip: 'Mis vehículos',
+            onPressed: () => context.push(AppRoutes.vehiculosPath),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Cerrar sesión',
             onPressed: () => context.read<AuthCubit>().logout(),

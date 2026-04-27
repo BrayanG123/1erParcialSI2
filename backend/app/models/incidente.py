@@ -32,4 +32,4 @@ class Incidente(Base):
     categoria = relationship("Categoria", back_populates="incidentes")
     asignacion = relationship("AsignacionServicio", back_populates="incidente", uselist=False)
     evidencias = relationship("Evidencia", back_populates="incidente")
-    procesamientos_ia = relationship("ProcesamientoIA", back_populates="incidente")
+    # procesamientos_ia = relationship("ProcesamientoIA", back_populates="incidente")

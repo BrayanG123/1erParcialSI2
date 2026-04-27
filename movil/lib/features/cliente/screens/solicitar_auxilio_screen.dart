@@ -6,6 +6,7 @@ import 'package:movil/features/auth/bloc/auth_cubit.dart';
 import 'package:movil/features/auth/bloc/auth_state.dart';
 import 'package:movil/features/cliente/bloc/incidente_cubit.dart';
 import 'package:movil/features/cliente/bloc/incidente_state.dart';
+import 'package:movil/features/cliente/widgets/mapa_selector.dart';
 import 'package:movil/models/categoria.dart';
 import 'package:movil/models/vehiculo.dart';
 
@@ -32,34 +33,40 @@ class _SolicitarAuxilioView extends StatefulWidget {
 class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
   final _formKey        = GlobalKey<FormState>();
   final _descripcionCtrl = TextEditingController();
-  final _latCtrl        = TextEditingController();
-  final _lonCtrl        = TextEditingController();
 
   Vehiculo?  _vehiculoSeleccionado;
   Categoria? _categoriaSeleccionada;
 
+  // Coordenadas elegidas en el mapa
+  double? _latitud;
+  double? _longitud;
+
   @override
   void dispose() {
     _descripcionCtrl.dispose();
-    _latCtrl.dispose();
-    _lonCtrl.dispose();
     super.dispose();
   }
 
   void _submit(BuildContext context) {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_latitud == null || _longitud == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Marca tu ubicación en el mapa.'),
+          backgroundColor: AppTheme.advertencia,
+        ),
+      );
+      return;
+    }
+
     final authState = context.read<AuthCubit>().state;
     if (authState is! AuthAuthenticated) return;
 
-    final lat = double.tryParse(_latCtrl.text.trim());
-    final lon = double.tryParse(_lonCtrl.text.trim());
-    if (lat == null || lon == null) return;
-
     context.read<IncidenteCubit>().crearIncidente(
       descripcion: _descripcionCtrl.text.trim(),
-      latitud:     lat,
-      longitud:    lon,
+      latitud:     _latitud!,
+      longitud:    _longitud!,
       clienteId:   authState.usuario.id,
       vehiculoId:  _vehiculoSeleccionado?.id,
       categoriaId: _categoriaSeleccionada?.id,
@@ -105,12 +112,13 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+
                   // --- Descripción ---
                   TextFormField(
                     controller: _descripcionCtrl,
@@ -173,67 +181,57 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
                   // --- Coordenadas manuales ---
                   // En la lección 09 esto se reemplaza con el mapa
                   const Text(
-                    'Ubicación (coordenadas)',
+                    'Tu ubicacion',
                     style: TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'En la lección 09 esto se obtendrá automáticamente del GPS.',
-                    style: TextStyle(
-                        fontSize: 12, color: AppTheme.textoSecundario),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _latCtrl,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true, signed: true),
-                          decoration: InputDecoration(
-                            labelText: 'Latitud',
-                            hintText: '-17.7833',
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty)
-                              return 'Requerido';
-                            if (double.tryParse(v.trim()) == null)
-                              return 'Número inválido';
-                            return null;
-                          },
-                        ),
+
+                  // Muestra las coordenadas elegidas (o instrucción)
+                  if (_latitud != null && _longitud != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        'Lat: ${_latitud!.toStringAsFixed(6)}'
+                        '  |  Lon: ${_longitud!.toStringAsFixed(6)}',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textoSecundario),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _lonCtrl,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true, signed: true),
-                          decoration: InputDecoration(
-                            labelText: 'Longitud',
-                            hintText: '-63.1821',
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty)
-                              return 'Requerido';
-                            if (double.tryParse(v.trim()) == null)
-                              return 'Número inválido';
-                            return null;
-                          },
-                        ),
+                    ) else
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        'Toca el mapa o usa el botón GPS para marcar tu posición.',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textoSecundario),
                       ),
-                    ],
+                    ),
+
+                  // Mapa de 300 px de alto
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 300,
+                      child: MapaSelector(
+                        onPosicionSeleccionada: (lat, lon) {
+                          setState(() {
+                            _latitud  = lat;
+                            _longitud = lon;
+                          });
+                        },
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 28,),
+                  const SizedBox(height: 24),
+
 
                   // --- Botón enviar ---
                   FilledButton.icon(
-                    onPressed: cargandoEnvio ? null : () => _submit(context),
+                    onPressed: cargandoEnvio 
+                        ? null 
+                        : () => _submit(context),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.acento,
                       minimumSize: const Size.fromHeight(52),
