@@ -9,6 +9,8 @@ import 'package:movil/features/cliente/bloc/incidente_state.dart';
 import 'package:movil/features/cliente/widgets/mapa_selector.dart';
 import 'package:movil/models/categoria.dart';
 import 'package:movil/models/vehiculo.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 
 class SolicitarAuxilioScreen extends StatelessWidget {
@@ -40,6 +42,7 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
   // Coordenadas elegidas en el mapa
   double? _latitud;
   double? _longitud;
+  File? _foto;
 
   @override
   void dispose() {
@@ -70,7 +73,21 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
       clienteId:   authState.usuario.id,
       vehiculoId:  _vehiculoSeleccionado?.id,
       categoriaId: _categoriaSeleccionada?.id,
+      rutaFoto:    _foto?.path,   
     );
+  }
+
+  Future<void> _elegirFoto() async {
+    final picker = ImagePicker();
+    final imagen = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 80,
+    );
+    if (imagen != null && mounted) {
+      setState(() => _foto = File(imagen.path));
+    }
   }
 
   @override
@@ -225,6 +242,61 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Foto del problema (opcional)',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: _elegirFoto,
+                    child: Container(
+                      height: 130,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primario.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppTheme.primario.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: _foto != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(11),
+                              child: Image.file(
+                                _foto!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            )
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo_outlined,
+                                    size: 36, color: AppTheme.primario),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Toca para agregar una foto',
+                                  style: TextStyle(
+                                      color: AppTheme.textoSecundario, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  // Si hay foto, mostrar botón para quitarla
+                  if (_foto != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () => setState(() => _foto = null),
+                        icon: const Icon(Icons.close, size: 16, color: AppTheme.peligro),
+                        label: const Text('Quitar foto',
+                            style: TextStyle(color: AppTheme.peligro, fontSize: 12)),
+                      ),
+                    ),
+                  const SizedBox(height: 16),
 
 
                   // --- Botón enviar ---

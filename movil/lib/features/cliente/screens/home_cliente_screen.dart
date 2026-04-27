@@ -33,100 +33,116 @@ class _HomeClienteView extends StatelessWidget {
         ? authState.usuario.nombre
         : 'Cliente';
 
-    return Scaffold(
-      backgroundColor: AppTheme.fondo,
-      appBar: AppBar(
-        title: Text('Hola, $nombre'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.directions_car_outlined),
-            tooltip: 'Mis vehículos',
-            onPressed: () => context.push(AppRoutes.vehiculosPath),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Cerrar sesión',
-            onPressed: () => context.read<AuthCubit>().logout(),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => context.read<IncidenteCubit>().cargarMisIncidentes(),
-        child: BlocBuilder<IncidenteCubit, IncidenteState>(
-          builder: (context, state) {
-            return CustomScrollView(
-              slivers: [
-                // --- Banner "Solicitar auxilio" ---
-                SliverToBoxAdapter(
-                  child: _BannerAuxilio(
-                    onTap: () => context.push(AppRoutes.solicitarAuxilio),
-                  ),
-                ),
-
-                // --- Título historial ---
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(20, 24, 20, 8),
-                    child: Text(
-                      'Mis solicitudes recientes',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // --- Lista de incidentes ---
-                if (state is IncidenteCargando)
-                  const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (state is IncidenteError)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline,
-                              size: 48, color: AppTheme.peligro),
-                          const SizedBox(height: 12),
-                          Text(state.mensaje,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: AppTheme.textoSecundario)),
-                        ],
-                      ),
-                    ),
-                  )
-                else if (state is IncidenteListaCargada &&
-                    state.incidentes.isEmpty)
-                  const SliverFillRemaining(
-                    child: Center(
-                      child: Text(
-                        'Aún no tienes solicitudes.\nPresiona el botón para pedir auxilio.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppTheme.textoSecundario),
-                      ),
-                    ),
-                  )
-                else if (state is IncidenteListaCargada)
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) =>
-                          _TarjetaIncidente(incidente: state.incidentes[i]),
-                      childCount: state.incidentes.length,
-                    ),
-                  )
-                else
-                  const SliverToBoxAdapter(child: SizedBox.shrink()),
-              ],
-            );
-          },
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {               
+        if (state is AuthUnauthenticated) {       
+          context.goNamed(AppRoutes.login);       
+        }                                         
+      }, 
+      child: Scaffold(
+        backgroundColor: AppTheme.fondo,
+        appBar: AppBar(
+          title: Text('Hola, $nombre'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.account_circle_outlined),
+              tooltip: 'Mi perfil',
+              onPressed: () => context.push('/perfil'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.directions_car_outlined),
+              tooltip: 'Mis vehículos',
+              onPressed: () => context.push(AppRoutes.vehiculosPath),
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Cerrar sesión',
+              onPressed: () => context.read<AuthCubit>().logout(),
+            ),
+          ],
         ),
-      ),
+        body: RefreshIndicator(
+          onRefresh: () => context.read<IncidenteCubit>().cargarMisIncidentes(),
+          child: BlocBuilder<IncidenteCubit, IncidenteState>(
+            builder: (context, state) {
+              return CustomScrollView(
+                slivers: [
+                  // --- Banner "Solicitar auxilio" ---
+                  SliverToBoxAdapter(
+                    child: _BannerAuxilio(
+                      onTap: () => context.pushNamed(AppRoutes.solicitarAuxilio),
+                    ),
+                  ),
+
+                  // --- Título historial ---
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(20, 24, 20, 8),
+                      child: Text(
+                        'Mis solicitudes recientes',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // --- Lista de incidentes ---
+                  if (state is IncidenteCargando)
+                    const SliverFillRemaining(
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (state is IncidenteError)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline,
+                                size: 48, color: AppTheme.peligro),
+                            const SizedBox(height: 12),
+                            Text(state.mensaje,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    color: AppTheme.textoSecundario)),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (state is IncidenteListaCargada &&
+                      state.incidentes.isEmpty)
+                    const SliverFillRemaining(
+                      child: Center(
+                        child: Text(
+                          'Aún no tienes solicitudes.\nPresiona el botón para pedir auxilio.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppTheme.textoSecundario),
+                        ),
+                      ),
+                    )
+                  else if (state is IncidenteListaCargada)
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) =>
+                            _TarjetaIncidente(incidente: state.incidentes[i]),
+                        childCount: state.incidentes.length,
+                      ),
+                    )
+                  else
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
+                ],
+              );
+            },
+          ),
+        ),
+      )
+
     );
+
   }
+
+
 }
 
 
@@ -230,28 +246,42 @@ class _TarjetaIncidente extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _colorEstado.withValues(alpha:  0.15),
-          child: Icon(Icons.directions_car, color: _colorEstado),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => context.pushNamed(
+          AppRoutes.detalleIncidente,
+          pathParameters: {'id': incidente.id.toString()},
         ),
-        title: Text(
-          incidente.descripcion,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          '${incidente.fechaHora.day}/${incidente.fechaHora.month}/${incidente.fechaHora.year}',
-          style: const TextStyle(fontSize: 12),
-        ),
-        trailing: Chip(
-          label: Text(
-            _etiquetaEstado,
-            style: TextStyle(color: _colorEstado, fontSize: 12),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: _colorEstado.withValues(alpha: 0.15),
+            child: Icon(Icons.directions_car, color: _colorEstado),
           ),
-          backgroundColor: _colorEstado.withValues(alpha:  0.12),
-          side: BorderSide.none,
-          padding: EdgeInsets.zero,
+          title: Text(
+            incidente.descripcion,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            '${incidente.fechaHora.day}/${incidente.fechaHora.month}/${incidente.fechaHora.year}',
+            style: const TextStyle(fontSize: 12),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Chip(
+                label: Text(
+                  _etiquetaEstado,
+                  style: TextStyle(color: _colorEstado, fontSize: 12),
+                ),
+                backgroundColor: _colorEstado.withValues(alpha: 0.12),
+                side: BorderSide.none,
+                padding: EdgeInsets.zero,
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right, color: AppTheme.textoSecundario),
+            ],
+          ),
         ),
       ),
     );

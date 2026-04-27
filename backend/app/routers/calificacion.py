@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.usuario import Usuario
+from app.models.usuario import Usuario, RolUsuario
 from app.schemas.calificacion import CalificacionCreate, CalificacionRead
 from app.crud.calificacion import (
     crear_calificacion,
@@ -10,7 +10,11 @@ from app.crud.calificacion import (
     get_calificaciones_de_mecanico,
 )
 from app.crud.servicio_realizado import get_servicio_por_id
-from app.core.dependencies import get_current_cliente, get_current_administrador
+from app.core.dependencies import (
+    get_current_cliente, 
+    get_current_administrador,
+    get_current_usuario
+)
 from app.services.bitacora import BitacoraService
 
 
@@ -57,9 +61,10 @@ def calificar_servicio(
 @router.get("/servicio/{servicio_id}", response_model=CalificacionRead)
 def calificacion_de_servicio(
     servicio_id: int,
-    usuario: Usuario = Depends(get_current_administrador),
+    usuario: Usuario = Depends(get_current_usuario),
     db: Session = Depends(get_db),
 ):
+    """Admin o cliente dueño consultan la calificación de un servicio."""
     cal = get_calificacion_por_servicio(db, servicio_id)
     if not cal:
         raise HTTPException(status_code=404, detail="Este servicio aún no tiene calificación")

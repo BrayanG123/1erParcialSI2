@@ -8,6 +8,7 @@ class ApiConstants {
   static const String registerMecanico = '/auth/registro/mecanico';
 
   // Usuarios
+  static const String usuarios = '/usuarios';
   static const String usuarioMe = '/usuarios/me';
 
   // Vehículos

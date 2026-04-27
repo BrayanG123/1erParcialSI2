@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     APP_NAME: str = "Auxilio_vehicular_api"
     DEBUG: bool = False
 
+    # Cloudinary
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+
     # indicar a pydantic donde esta el .env
     model_config = SettingsConfigDict(
         env_file=Path(__file__).parent.parent / ".env",

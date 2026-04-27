@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.usuario import Usuario
+from app.models.usuario import Usuario, RolUsuario
 from app.models.asignacion_servicio import EstadoAsignacion
 from app.schemas.servicio_realizado import ServicioRealizadoCreate, ServicioRealizadoRead
 from app.crud.asignacion_servicio import get_asignacion_por_id, actualizar_estado_asignacion
@@ -13,7 +13,12 @@ from app.crud.servicio_realizado import (
     get_servicios_de_mecanico,
 )
 from app.schemas.asignacion_servicio import AsignacionEstadoUpdate
-from app.core.dependencies import get_current_mecanico, get_current_administrador
+from app.core.dependencies import (
+    get_current_mecanico,
+    get_current_administrador,
+    get_current_usuario,
+    get_current_cliente
+)
 from app.services.bitacora import BitacoraService
 
 
@@ -85,6 +90,30 @@ def mis_servicios(
 ):
     mecanico = usuario.perfil_mecanico
     return get_servicios_de_mecanico(db, mecanico.id)
+
+
+# ── CLIENTE — ver el servicio de su propia asignación ────────────────────────
+@router.get("/mi-asignacion/{asignacion_id}", response_model=ServicioRealizadoRead)
+def mi_servicio_de_asignacion(
+    asignacion_id: int,
+    usuario: Usuario = Depends(get_current_cliente),
+    db: Session = Depends(get_db),
+):
+    """El cliente consulta el servicio realizado en su asignación."""
+    from app.crud.asignacion_servicio import get_asignacion_por_id
+    asignacion = get_asignacion_por_id(db, asignacion_id)
+    if not asignacion:
+        raise HTTPException(status_code=404, detail="Asignación no encontrada")
+
+    # Verificar que el incidente de esa asignación pertenece al cliente
+    incidente = asignacion.incidente
+    if incidente.cliente.usuario_id != usuario.id:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
+    servicio = get_servicio_por_asignacion(db, asignacion_id)
+    if not servicio:
+        raise HTTPException(status_code=404, detail="Aún no hay servicio registrado")
+    return servicio
 
 
 

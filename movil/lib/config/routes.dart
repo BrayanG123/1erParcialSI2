@@ -11,7 +11,8 @@ import 'package:movil/features/cliente/screens/vehiculos_screen.dart';
 import 'package:movil/features/mecanico/screens/detalle_asignacion_screen.dart';
 import 'package:movil/features/mecanico/screens/home_mecanico_screen.dart';
 import 'package:movil/models/vehiculo.dart';
-
+import 'package:movil/features/cliente/screens/detalle_incidente_screen.dart';
+import 'package:movil/features/perfil/screens/perfil_screen.dart';
 
 
 class AppRoutes {
@@ -28,6 +29,10 @@ class AppRoutes {
   static const vehiculosPath   = '/cliente/vehiculos';  // constante de path base
   static const nuevoVehiculo   = 'nuevo-vehiculo';
   static const editarVehiculo  = 'editar-vehiculo';
+  static const String detalleIncidente = 'detalle-incidente';
+  static const perfil = 'perfil';
+
+
 }
 
 final appRouter = GoRouter(
@@ -107,7 +112,20 @@ final appRouter = GoRouter(
       ],
     ),
 
+    GoRoute(
+      path: '/cliente/incidente/:id',
+      name: AppRoutes.detalleIncidente,
+      builder: (context, state) {
+        final id = int.parse(state.pathParameters['id']!);
+        return DetalleIncidenteScreen(incidenteId: id);
+      },
+    ),
 
+    GoRoute(
+      path: '/perfil',
+      name: AppRoutes.perfil,
+      builder: (context, state) => const PerfilScreen(),
+    ),
   ],
 
   

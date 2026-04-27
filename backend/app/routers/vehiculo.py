@@ -21,7 +21,7 @@ MAX_FOTO_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
 # ── Listar mis vehículos ──────────────────────────────────────────────────────
-@router.get("/", response_model=list[VehiculoRead])
+@router.get("", response_model=list[VehiculoRead])
 def mis_vehiculos(
     usuario: Usuario = Depends(get_current_cliente),
     db: Session = Depends(get_db),
@@ -30,7 +30,7 @@ def mis_vehiculos(
 
 
 # ── Crear vehículo ────────────────────────────────────────────────────────────
-@router.post("/", response_model=VehiculoRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=VehiculoRead, status_code=status.HTTP_201_CREATED)
 def crear(
     datos: VehiculoCreate,
     usuario: Usuario = Depends(get_current_cliente),

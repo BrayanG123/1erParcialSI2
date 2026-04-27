@@ -48,10 +48,11 @@ class IncidenteCubit extends Cubit<IncidenteState>{
     required int clienteId,
     int? vehiculoId,
     int? categoriaId,
+    String? rutaFoto,   
   }) async {
     emit(const IncidenteCargando());
     try {
-      final incidente = await _incidenteService.crearIncidente(
+      var incidente = await _incidenteService.crearIncidente(
         descripcion: descripcion,
         latitud:     latitud,
         longitud:    longitud,
@@ -59,6 +60,15 @@ class IncidenteCubit extends Cubit<IncidenteState>{
         vehiculoId:  vehiculoId,
         categoriaId: categoriaId,
       );
+
+      // Si el usuario adjuntó foto, subirla ahora
+      if (rutaFoto != null) {
+        incidente = await _incidenteService.subirFoto(
+          incidenteId: incidente.id,
+          rutaFoto:    rutaFoto,
+        );
+      }
+
       emit(IncidenteCreado(incidente));
     } on ApiException catch (e) {
       emit(IncidenteError(e.mensaje));

@@ -48,4 +48,37 @@ class IncidenteService {
       throw ApiException.fromDioException(e);
     }
   }
+
+  Future<Incidente> obtenerPorId(int id) async {
+    try {
+      final response = await _dio.get('${ApiConstants.incidentes}/$id');
+      return Incidente.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+
+  Future<Incidente> subirFoto({
+    required int incidenteId,
+    required String rutaFoto,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'foto': await MultipartFile.fromFile(
+          rutaFoto,
+          filename: rutaFoto.split('/').last,
+        ),
+      });
+      final response = await _dio.post(
+        '${ApiConstants.incidentes}/$incidenteId/foto',
+        data: formData,
+      );
+      return Incidente.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
+
 }

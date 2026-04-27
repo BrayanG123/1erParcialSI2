@@ -37,6 +37,7 @@ class IncidenteRead(IncidenteBase):
     fecha_hora: datetime
     estado: EstadoIncidente
     resumen_ia: Optional[str] = None
+    foto_incidente: Optional[str] = None
     cliente_id: int
 
     model_config = {"from_attributes": True}

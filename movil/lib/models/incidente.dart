@@ -20,6 +20,8 @@ class Incidente extends Equatable {
   final EstadoIncidente estado;
   @JsonKey(name: 'resumen_ia')
   final String? resumenIa;
+  @JsonKey(name: 'foto_incidente')
+  final String? fotoIncidente;
   @JsonKey(name: 'cliente_id')
   final int clienteId;
   @JsonKey(name: 'vehiculo_id')
@@ -35,6 +37,7 @@ class Incidente extends Equatable {
     required this.longitud,
     required this.estado,
     this.resumenIa,
+    this.fotoIncidente,
     required this.clienteId,
     this.vehiculoId,
     this.categoriaId,
@@ -47,5 +50,5 @@ class Incidente extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, descripcion, fechaHora, latitud, longitud, estado, clienteId];
+      [id, descripcion, fechaHora, latitud, longitud, estado, resumenIa, fotoIncidente, clienteId, vehiculoId, categoriaId,];
 }
