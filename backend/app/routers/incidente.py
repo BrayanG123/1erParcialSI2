@@ -30,7 +30,7 @@ router = APIRouter(prefix="/incidentes", tags=["Incidentes"])
 
 # CLIENTE — reportar un incidente
 # ─────────────────────────────────────────────────────────────────────────────
-@router.post("/", response_model=IncidenteRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=IncidenteRead, status_code=status.HTTP_201_CREATED)
 def reportar_incidente(
     datos: IncidenteCreate,
     usuario: Usuario = Depends(get_current_cliente),

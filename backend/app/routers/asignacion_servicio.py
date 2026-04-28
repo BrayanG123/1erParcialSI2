@@ -59,7 +59,7 @@ def crear_nueva_asignacion(
     incidente = get_incidente_por_id(db, datos.incidente_id)
     if not incidente:
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
-    if incidente.estado != EstadoIncidente.disponible:   # necesitas importar EstadoIncidente
+    if incidente.estado != EstadoIncidente.disponible:
         raise HTTPException(status_code=400, detail="El incidente no está disponible")
     
     marcar_no_disponible(db, incidente)

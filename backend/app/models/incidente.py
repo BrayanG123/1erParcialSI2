@@ -6,7 +6,7 @@ from app.models.base import Base
 
 
 class EstadoIncidente(str, enum.Enum):
-    disponible = "disponible"
+    disponible    = "disponible"
     no_disponible = "no_disponible"
 
 

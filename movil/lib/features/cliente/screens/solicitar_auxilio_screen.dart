@@ -6,12 +6,11 @@ import 'package:movil/features/auth/bloc/auth_cubit.dart';
 import 'package:movil/features/auth/bloc/auth_state.dart';
 import 'package:movil/features/cliente/bloc/incidente_cubit.dart';
 import 'package:movil/features/cliente/bloc/incidente_state.dart';
-import 'package:movil/features/cliente/widgets/mapa_selector.dart';
+import 'package:movil/features/cliente/screens/seleccionar_ubicacion_screen.dart';
 import 'package:movil/models/categoria.dart';
 import 'package:movil/models/vehiculo.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'dart:async';
 import 'package:record/record.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -47,18 +46,12 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
   double? _longitud;
   File? _foto;
 
-  // Audio
-  final AudioRecorder _recorder = AudioRecorder();
-  String? _rutaAudio;           // path del archivo grabado
-  bool    _grabando = false;
-  int     _segundos = 0;
-  Timer?  _timer;
+  // Audio (solo se guarda el path; la lógica vive en _AudioGrabacion)
+  String? _rutaAudio;
 
   @override
   void dispose() {
     _descripcionCtrl.dispose();
-    _timer?.cancel();
-    _recorder.dispose(); 
     super.dispose();
   }
 
@@ -88,6 +81,24 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
       rutaFoto:    _foto?.path,   
       rutaAudio:   _rutaAudio,
     );
+  }
+
+  Future<void> _abrirSelectorUbicacion() async {
+    final resultado = await Navigator.push<(double, double)>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SeleccionarUbicacionScreen(
+          latitudInicial:  _latitud,
+          longitudInicial: _longitud,
+        ),
+      ),
+    );
+    if (resultado != null && mounted) {
+      setState(() {
+        _latitud  = resultado.$1;
+        _longitud = resultado.$2;
+      });
+    }
   }
 
   Future<void> _elegirFoto() async {
@@ -128,66 +139,7 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
     }
   }
 
-  Future<void> _iniciarGrabacion() async {
-    // Solicitar permiso de micrófono
-    final permiso = await Permission.microphone.request();
-    if (!permiso.isGranted) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permiso de micrófono denegado'),
-            backgroundColor: Color(0xFFC62828),
-          ),
-        );
-      }
-      return;
-    }
 
-    final path =
-        '${Directory.systemTemp.path}/audio_incidente_${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-    await _recorder.start(
-      const RecordConfig(encoder: AudioEncoder.aacLc),
-      path: path,
-    );
-
-    setState(() {
-      _grabando = true;
-      _segundos = 0;
-    });
-
-    // Contador de segundos
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _segundos++);
-    });
-  }
-
-  Future<void> _detenerGrabacion() async {
-    _timer?.cancel();
-    final path = await _recorder.stop();
-    setState(() {
-      _grabando  = false;
-      _rutaAudio = path;
-    });
-  }
-
-  void _eliminarAudio() {
-    if (_rutaAudio != null) {
-      final archivo = File(_rutaAudio!);
-      if (archivo.existsSync()) archivo.deleteSync();
-    }
-    setState(() {
-      _rutaAudio = null;
-      _grabando  = false;
-      _segundos  = 0;
-    });
-  }
-
-  String _formatearTiempo(int segundos) {
-    final min = segundos ~/ 60;
-    final seg = segundos % 60;
-    return '${min.toString().padLeft(2, '0')}:${seg.toString().padLeft(2, '0')}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -294,52 +246,56 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
                     const SizedBox(height: 16),
                   ],
 
-                  // --- Coordenadas manuales ---
-                  // En la lección 09 esto se reemplaza con el mapa
+                  // --- Ubicación ---
                   const Text(
-                    'Tu ubicacion',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14),
+                    'Tu ubicación',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   ),
-                  const SizedBox(height: 4),
-
-                  // Muestra las coordenadas elegidas (o instrucción)
+                  const SizedBox(height: 8),
                   if (_latitud != null && _longitud != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        'Lat: ${_latitud!.toStringAsFixed(6)}'
-                        '  |  Lon: ${_longitud!.toStringAsFixed(6)}',
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textoSecundario),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primario.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppTheme.primario.withValues(alpha: 0.3)),
                       ),
-                    ) else
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        'Toca el mapa o usa el botón GPS para marcar tu posición.',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textoSecundario),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on,
+                              color: AppTheme.primario),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Lat: ${_latitud!.toStringAsFixed(6)}\n'
+                              'Lon: ${_longitud!.toStringAsFixed(6)}',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textoSecundario),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _abrirSelectorUbicacion,
+                            child: const Text('Cambiar'),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: _abrirSelectorUbicacion,
+                      icon: const Icon(Icons.map_outlined),
+                      label: const Text('Seleccionar ubicación en el mapa'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        foregroundColor: AppTheme.primario,
+                        side: const BorderSide(color: AppTheme.primario),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-
-                  // Mapa de 300 px de alto
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      height: 300,
-                      child: MapaSelector(
-                        onPosicionSeleccionada: (lat, lon) {
-                          setState(() {
-                            _latitud  = lat;
-                            _longitud = lon;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 24),
 
                   const SizedBox(height: 8),
@@ -404,14 +360,9 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
-                  _WidgetGrabacion(
-                    grabando:    _grabando,
-                    rutaAudio:   _rutaAudio,
-                    segundos:    _segundos,
-                    formatear:   _formatearTiempo,
-                    onIniciar:   _iniciarGrabacion,
-                    onDetener:   _detenerGrabacion,
-                    onEliminar:  _eliminarAudio,
+                  _AudioGrabacion(
+                    onAudioGrabado:  (path) => setState(() => _rutaAudio = path),
+                    onAudioEliminado: ()    => setState(() => _rutaAudio = null),
                   ),
                   const SizedBox(height: 16),
 
@@ -450,113 +401,127 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
 }
 
 
-// ─── Widget de grabación de audio ──────────────────────────────────────────
+// ─── Widget de grabación de audio (versión mínima, sin timer) ───────────────
 
-class _WidgetGrabacion extends StatelessWidget {
-  final bool     grabando;
-  final String?  rutaAudio;
-  final int      segundos;
-  final String   Function(int) formatear;
-  final VoidCallback onIniciar;
-  final VoidCallback onDetener;
-  final VoidCallback onEliminar;
+class _AudioGrabacion extends StatefulWidget {
+  final void Function(String path) onAudioGrabado;
+  final VoidCallback onAudioEliminado;
 
-  const _WidgetGrabacion({
-    required this.grabando,
-    required this.rutaAudio,
-    required this.segundos,
-    required this.formatear,
-    required this.onIniciar,
-    required this.onDetener,
-    required this.onEliminar,
+  const _AudioGrabacion({
+    required this.onAudioGrabado,
+    required this.onAudioEliminado,
   });
 
   @override
+  State<_AudioGrabacion> createState() => _AudioGrabacionState();
+}
+
+class _AudioGrabacionState extends State<_AudioGrabacion> {
+  final AudioRecorder _recorder = AudioRecorder();
+  String? _rutaAudio;
+  bool _grabando = false;
+
+  @override
+  void dispose() {
+    _recorder.dispose();
+    super.dispose();
+  }
+
+  Future<void> _grabar() async {
+    final permiso = await Permission.microphone.request();
+    if (!permiso.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permiso de micrófono denegado.')),
+        );
+      }
+      return;
+    }
+    final path =
+        '${Directory.systemTemp.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+    if (mounted) setState(() => _grabando = true);
+  }
+
+  Future<void> _detener() async {
+    final path = await _recorder.stop();
+    if (mounted) {
+      setState(() {
+        _grabando = false;
+        _rutaAudio = path;
+      });
+      if (path != null) widget.onAudioGrabado(path);
+    }
+  }
+
+  void _eliminar() {
+    if (_rutaAudio != null) {
+      final f = File(_rutaAudio!);
+      if (f.existsSync()) f.deleteSync();
+    }
+    setState(() {
+      _rutaAudio = null;
+      _grabando = false;
+    });
+    widget.onAudioEliminado();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Estado: audio ya grabado
-    if (rutaAudio != null && !grabando) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: const Color(0xFF2E7D32).withValues(alpha: 0.4)),
+    return Row(
+      children: [
+        // Botón grabar
+        IconButton.filled(
+          onPressed: _grabando ? null : _grabar,
+          icon: const Icon(Icons.mic),
+          tooltip: 'Iniciar grabación',
+          style: IconButton.styleFrom(
+            backgroundColor: _grabando
+                ? Colors.grey.shade300
+                : const Color(0xFF1565C0),
+            foregroundColor: Colors.white,
+          ),
         ),
-        child: Row(
-          children: [
-            const Icon(Icons.check_circle_outline,
-                color: Color(0xFF2E7D32)),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'Audio grabado',
-                style: TextStyle(
-                    color: Color(0xFF2E7D32),
-                    fontWeight: FontWeight.w500),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline,
-                  color: Color(0xFFC62828)),
-              tooltip: 'Eliminar audio',
-              onPressed: onEliminar,
-            ),
-          ],
+        const SizedBox(width: 8),
+        // Botón detener
+        IconButton.filled(
+          onPressed: _grabando ? _detener : null,
+          icon: const Icon(Icons.stop),
+          tooltip: 'Detener grabación',
+          style: IconButton.styleFrom(
+            backgroundColor: _grabando
+                ? const Color(0xFFC62828)
+                : Colors.grey.shade300,
+            foregroundColor: Colors.white,
+          ),
         ),
-      );
-    }
-
-    // Estado: grabando
-    if (grabando) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFC62828).withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: const Color(0xFFC62828).withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.fiber_manual_record,
-                color: Color(0xFFC62828), size: 14),
-            const SizedBox(width: 8),
-            Text(
-              'Grabando  ${formatear(segundos)}',
-              style: const TextStyle(
-                  color: Color(0xFFC62828),
-                  fontWeight: FontWeight.w500),
+        const SizedBox(width: 12),
+        // Estado / nombre de archivo
+        Expanded(
+          child: Text(
+            _grabando
+                ? 'Grabando...'
+                : _rutaAudio != null
+                    ? 'Audio listo'
+                    : 'Sin audio',
+            style: TextStyle(
+              fontSize: 13,
+              color: _grabando
+                  ? const Color(0xFFC62828)
+                  : _rutaAudio != null
+                      ? const Color(0xFF2E7D32)
+                      : AppTheme.textoSecundario,
             ),
-            const Spacer(),
-            ElevatedButton.icon(
-              onPressed: onDetener,
-              icon: const Icon(Icons.stop, size: 18),
-              label: const Text('Detener'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC62828),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 8),
-              ),
-            ),
-          ],
+          ),
         ),
-      );
-    }
-
-    // Estado: sin audio
-    return OutlinedButton.icon(
-      onPressed: onIniciar,
-      icon: const Icon(Icons.mic_outlined),
-      label: const Text('Grabar audio descriptivo'),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(48),
-        foregroundColor: const Color(0xFF1565C0),
-        side: const BorderSide(color: Color(0xFF1565C0)),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
-      ),
+        // Botón eliminar (solo si hay audio)
+        if (_rutaAudio != null && !_grabando)
+          IconButton(
+            onPressed: _eliminar,
+            icon: const Icon(Icons.delete_outline, color: Color(0xFFC62828)),
+            tooltip: 'Eliminar audio',
+          ),
+      ],
     );
   }
 }
