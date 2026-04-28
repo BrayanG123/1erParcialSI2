@@ -1,0 +1,51 @@
+<div class="grid min-h-screen grid-cols-1 gap-6 bg-gray-50 p-6  lg:grid-cols-5">
+  <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm   lg:col-span-2">
+    <h2 class="mb-1 text-xl font-bold text-gray-900 ">Seguimiento en Vivo</h2>
+    <p class="mb-4 text-sm text-gray-500 ">Asignaciones activas en estado En Proceso.</p>
+
+    <div class="space-y-2">
+      <button
+        *ngFor="let asignacion of asignaciones_en_proceso"
+        (click)="seleccionarServicio(asignacion)"
+        class="w-full rounded-xl border px-4 py-3 text-left transition"
+        [ngClass]="asignacion_activa?.id === asignacion.id ? 'border-brand-500 bg-brand-50 ' : 'border-gray-200 hover:bg-gray-50  :bg-gray-700/40'"
+      >
+        <p class="text-sm font-semibold text-gray-900 ">Servicio #{{ asignacion.id }}</p>
+        <p class="text-xs text-gray-500 ">
+          Incidente: {{ asignacion.incidente_id || asignacion.incidente?.id || 'N/A' }} | Mecánico:
+          {{ asignacion.mecanico_id || asignacion.mecanico?.id || 'N/A' }}
+        </p>
+      </button>
+
+      <p *ngIf="!loading_asignaciones && asignaciones_en_proceso.length === 0" class="text-sm text-gray-500 ">
+        No hay servicios en proceso en este momento.
+      </p>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm   lg:col-span-3">
+    <h3 class="mb-4 text-lg font-semibold text-gray-900 ">Evidencias Multimedia</h3>
+    <p *ngIf="error" class="mb-3 rounded-lg bg-error-50 px-3 py-2 text-sm text-error-700  ">
+      {{ error }}
+    </p>
+
+    <div *ngIf="!asignacion_activa" class="rounded-xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500  ">
+      Selecciona un servicio activo para ver las fotos subidas por el mecánico.
+    </div>
+
+    <div *ngIf="asignacion_activa && !loading_evidencias" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div *ngFor="let evidencia of evidencias" class="overflow-hidden rounded-xl border border-gray-200 ">
+        <img
+          [src]="getEvidenciaUrl(evidencia)"
+          [alt]="evidencia.descripcion || 'Evidencia del servicio'"
+          class="h-52 w-full object-cover"
+        />
+        <p class="px-3 py-2 text-xs text-gray-600 ">{{ evidencia.descripcion || 'Evidencia sin descripción' }}</p>
+      </div>
+      <p *ngIf="evidencias.length === 0" class="col-span-full text-sm text-gray-500 ">
+        Este servicio no tiene evidencias disponibles.
+      </p>
+    </div>
+  </section>
+</div>
+

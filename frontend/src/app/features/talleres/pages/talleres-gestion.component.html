@@ -1,0 +1,264 @@
+<div class="space-y-6 min-h-screen bg-[#F1F5F9] -m-4 md:-m-6 p-4 md:p-8">
+  <!-- Header Card -->
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-[#3C50E0] rounded-2xl text-white shadow-lg shadow-blue-500/10">
+          <ng-icon name="heroBuildingOffice2" class="text-2xl"></ng-icon>
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-[#1C2434]">Gestión de Talleres</h1>
+          <p class="text-sm text-[#64748B] mt-1">Supervisión y control administrativo de todos los talleres afiliados.</p>
+        </div>
+      </div>
+      <button 
+        (click)="openModal()"
+        class="flex items-center gap-2 px-6 py-2.5 bg-[#3C50E0] hover:bg-opacity-90 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/10 transition-all active:scale-95"
+      >
+        <ng-icon name="heroPlus" class="text-lg"></ng-icon>
+        Nuevo Taller
+      </button>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error()" class="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-medium">
+    {{ error() }}
+  </div>
+
+  <!-- Filter Section -->
+  <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="flex flex-col lg:flex-row gap-4 items-end">
+      <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+        <!-- Search -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-[#64748B] uppercase tracking-widest ml-1">Buscador</label>
+          <div class="relative group">
+            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 group-focus-within:text-[#3C50E0] transition-colors">
+              <ng-icon name="heroMagnifyingGlass"></ng-icon>
+            </span>
+            <input 
+              type="text" 
+              placeholder="Nombre, dirección o email..." 
+              [(ngModel)]="searchTerm"
+              (input)="currentPage.set(1)"
+              class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434] placeholder:text-slate-400 shadow-sm"
+            >
+          </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-bold text-[#64748B] uppercase tracking-widest ml-1">Estado</label>
+          <div class="relative group">
+            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 group-focus-within:text-[#3C50E0] transition-colors">
+              <ng-icon name="heroFunnel"></ng-icon>
+            </span>
+            <select 
+              [(ngModel)]="statusFilter"
+              (change)="currentPage.set(1)"
+              class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434] appearance-none cursor-pointer shadow-sm"
+            >
+              <option value="todos">Todos los Estados</option>
+              <option value="activo">Activos</option>
+              <option value="inactivo">Inactivos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <button 
+        class="px-8 py-2.5 bg-[#1C2434] text-white rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 h-[42px] hover:bg-opacity-90"
+      >
+        Filtrar
+      </button>
+    </div>
+  </div>
+
+  <!-- Table Section -->
+  <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+    <div class="w-full overflow-x-auto custom-scrollbar">
+      <table class="w-full min-w-[800px] text-sm text-left border-collapse">
+        <thead class="bg-slate-50 text-[#1C2434] font-bold border-b border-slate-100 uppercase tracking-wider text-[10px]">
+          <tr>
+            <th class="px-6 py-4">Taller</th>
+            <th class="px-6 py-4 text-center">Ubicación</th>
+            <th class="px-6 py-4">Contacto</th>
+            <th class="px-6 py-4 text-center">Código</th>
+            <th class="px-6 py-4 text-center">Estado</th>
+            <th class="px-6 py-4 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          <!-- Loading State -->
+          <tr *ngIf="loading()">
+            <td colspan="6" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-8 h-8 border-2 border-[#3C50E0] border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-[#64748B] animate-pulse font-medium">Cargando talleres...</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data Rows -->
+          <tr *ngFor="let t of paginatedTalleres()" class="hover:bg-slate-50 transition-colors group">
+            <td class="px-6 py-4">
+              <div class="flex flex-col">
+                <span class="font-black text-[#1C2434] text-base">{{ t.nombre }}</span>
+                <span class="text-xs text-[#64748B] flex items-center gap-1 mt-0.5">
+                  <ng-icon name="heroMapPin" class="text-[10px]"></ng-icon>
+                  {{ t.direccion }}
+                </span>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <div class="inline-flex flex-col items-center p-2 rounded-lg bg-slate-50 border border-slate-100">
+                <span class="text-[10px] font-mono text-[#3C50E0]">LAT: {{ t.latitud || '0.0' }}</span>
+                <span class="text-[10px] font-mono text-[#3C50E0]">LNG: {{ t.longitud || '0.0' }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex flex-col gap-1">
+                <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <ng-icon name="heroPhone" class="text-slate-400"></ng-icon>
+                  {{ t.telefono || 'Sin Teléfono' }}
+                </span>
+                <span class="text-xs text-[#64748B] flex items-center gap-1.5">
+                  <ng-icon name="heroEnvelope" class="text-slate-400"></ng-icon>
+                  taller_{{ t.id }}&#64;vehiassist.com
+                </span>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-center font-mono text-slate-600">
+              #{{ 1000 + t.id }}
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span 
+                [class]="t.is_active 
+                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                  : 'bg-red-50 text-red-600 border-red-100'"
+                class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
+              >
+                {{ t.is_active ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  (click)="onEdit(t)"
+                  title="Editar"
+                  class="p-2 rounded-lg bg-white text-slate-500 hover:bg-[#3C50E0] hover:text-white transition-all border border-slate-200 shadow-sm"
+                >
+                  <ng-icon name="heroPencilSquare"></ng-icon>
+                </button>
+                <button 
+                  (click)="toggleEstado(t)"
+                  [title]="t.is_active ? 'Desactivar' : 'Activar'"
+                  [class]="t.is_active ? 'hover:bg-red-500' : 'hover:bg-emerald-500'"
+                  class="p-2 rounded-lg bg-white text-slate-500 hover:text-white transition-all border border-slate-200 shadow-sm"
+                >
+                  <ng-icon name="heroNoSymbol"></ng-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="bg-slate-50 px-6 py-5 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-xs text-[#64748B] font-bold uppercase tracking-wider">
+        Mostrando <span class="text-[#1C2434]">{{ (currentPage() - 1) * pageSize() + 1 }}</span> - <span class="text-[#1C2434]">{{ Math.min(currentPage() * pageSize(), filteredTalleres().length) }}</span> de <span class="text-[#1C2434]">{{ filteredTalleres().length }}</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button 
+          [disabled]="currentPage() === 1"
+          (click)="currentPage.set(currentPage() - 1)"
+          class="flex items-center gap-1 px-4 py-2 rounded-xl bg-white text-[#1C2434] border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all text-xs font-bold shadow-sm"
+        >
+          <ng-icon name="heroChevronLeft"></ng-icon>
+          Anterior
+        </button>
+        <button 
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          (click)="currentPage.set(currentPage() + 1)"
+          class="flex items-center gap-1 px-4 py-2 rounded-xl bg-white text-[#1C2434] border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all text-xs font-bold shadow-sm"
+        >
+          Siguiente
+          <ng-icon name="heroChevronRight"></ng-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registration Modal -->
+  <div *ngIf="showModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-[#1C2434]/40 backdrop-blur-[2px]" (click)="closeModal()"></div>
+    <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div class="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-blue-100 text-[#3C50E0] rounded-lg">
+            <ng-icon name="heroPlus" class="text-xl"></ng-icon>
+          </div>
+          <h2 class="text-xl font-bold text-[#1C2434]">Registrar Nuevo Taller</h2>
+        </div>
+        <button (click)="closeModal()" class="text-slate-400 hover:text-[#1C2434] transition-colors">
+          <ng-icon name="heroXMark" class="text-xl"></ng-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="tallerForm" (ngSubmit)="onSubmitTaller()" class="p-6 space-y-4">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Nombre del Taller</label>
+          <input 
+            type="text" 
+            formControlName="nombre"
+            placeholder="Ej: Taller Central VehiAssist"
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434]"
+          >
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Dirección</label>
+          <input 
+            type="text" 
+            formControlName="direccion"
+            placeholder="Av. Principal #123"
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434]"
+          >
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Teléfono</label>
+            <input 
+              type="text" 
+              formControlName="telefono"
+              placeholder="+591 ..."
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434]"
+            >
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-6">
+          <button 
+            type="button" 
+            (click)="closeModal()"
+            class="flex-1 px-6 py-3 rounded-xl bg-slate-100 text-[#64748B] font-bold hover:bg-slate-200 transition-all"
+          >
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            [disabled]="tallerForm.invalid || submitting()"
+            class="flex-1 px-6 py-3 rounded-xl bg-[#3C50E0] text-white font-bold hover:bg-opacity-90 shadow-lg shadow-blue-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <span *ngIf="submitting()" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            {{ submitting() ? 'Registrando...' : 'Registrar Taller' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

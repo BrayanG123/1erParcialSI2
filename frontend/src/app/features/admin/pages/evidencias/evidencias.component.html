@@ -1,0 +1,181 @@
+<div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
+  
+  <!-- Header con botón Volver -->
+  <div class="flex items-center gap-4 mb-8">
+    <button routerLink="/admin/incidentes" 
+      class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all shadow-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      Volver
+    </button>
+    <div class="flex items-center gap-2 text-slate-400">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      <span class="text-sm font-medium">Detalle del incidente</span>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-100 shadow-sm">
+    <div class="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-slate-500 font-medium">Cargando evidencias del incidente...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl mb-8 flex items-center gap-3">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    <p class="font-bold">{{ error }}</p>
+  </div>
+
+  <!-- Main Grid -->
+  <div *ngIf="!loading && incidente" class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    
+    <!-- Columna 1: Información del Incidente -->
+    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-fit">
+      <h3 class="text-lg font-extrabold text-slate-900 mb-6 flex items-center gap-2">
+        Información del incidente
+      </h3>
+      
+      <div class="space-y-6">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">ID de solicitud</label>
+          <p class="text-sm font-bold text-slate-800">#INC-2024-{{ incidente.id | number:'5.0-0' }}</p>
+        </div>
+        
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cliente</label>
+          <p class="text-sm font-bold text-slate-800">Juan Pérez {{ incidente.cliente_id }}</p>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Teléfono</label>
+          <p class="text-sm font-bold text-slate-800">320 123 4567</p>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fecha y hora</label>
+          <p class="text-sm font-bold text-slate-800">{{ incidente.fecha_hora | date:'dd/MM/yyyy hh:mm a' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ubicación</label>
+          <p class="text-sm font-bold text-slate-800 mb-4">Av. Siempre Viva 123, Bogotá</p>
+          <button class="w-full py-3 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all shadow-sm">
+            Ver en el mapa
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna 2: Evidencias -->
+    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[400px]">
+      <h3 class="text-lg font-extrabold text-slate-900 mb-6">Evidencias</h3>
+      
+      <div *ngIf="evidencias.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>
+        <p class="text-slate-500 font-bold italic text-sm px-6">"Esperando carga de evidencias por parte del cliente..."</p>
+      </div>
+
+      <div *ngIf="evidencias.length > 0" class="space-y-8">
+        <!-- Imágenes -->
+        <div *ngIf="getEvidenciasTipo('foto').length > 0">
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Imágenes</label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div *ngFor="let ev of getEvidenciasTipo('foto')" 
+              (click)="abrirLightbox(ev)"
+              class="aspect-square rounded-2xl overflow-hidden border border-slate-100 cursor-zoom-in hover:opacity-90 transition-opacity">
+              <img [src]="ev.url_archivo" class="w-full h-full object-cover" alt="Evidencia">
+            </div>
+          </div>
+        </div>
+
+        <!-- Audio -->
+        <div *ngIf="getEvidenciasTipo('audio').length > 0">
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Audio del cliente</label>
+          <div *ngFor="let ev of getEvidenciasTipo('audio')" class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <audio controls class="w-full h-10 custom-audio">
+              <source [src]="ev.url_archivo" type="audio/mpeg">
+              Tu navegador no soporta el audio.
+            </audio>
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Descripción del cliente</label>
+          <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 italic text-slate-600 text-sm leading-relaxed">
+            "{{ incidente.descripcion }}"
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna 3: Análisis IA -->
+    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-fit">
+      <h3 class="text-lg font-extrabold text-slate-900 mb-6">Análisis IA</h3>
+      
+      <div class="space-y-8">
+        <!-- Clasificación -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Clasificación</label>
+          <div class="flex items-center gap-2 text-slate-700 font-bold">
+            <div class="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+            </div>
+            Batería descargada <!-- Simulado -->
+          </div>
+        </div>
+
+        <!-- Nivel de Prioridad -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Nivel de prioridad</label>
+          <span class="inline-flex items-center px-4 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold uppercase tracking-wider">
+            Alta
+          </span>
+        </div>
+
+        <!-- Confianza -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Confianza</label>
+          <div class="flex items-center gap-3">
+            <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-500 rounded-full" style="width: 92%"></div>
+            </div>
+            <span class="text-sm font-extrabold text-emerald-600">92%</span>
+          </div>
+        </div>
+
+        <!-- Resumen automático -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Resumen automático</label>
+          <p class="text-sm text-slate-500 leading-relaxed">
+            El sistema detectó que el problema corresponde a una batería descargada según el análisis de imagen y la descripción del cliente.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones de Decisión (Bottom Bar) -->
+  <div *ngIf="!loading && incidente" class="fixed bottom-0 left-0 right-0 lg:left-64 bg-white/80 backdrop-blur-md border-t border-slate-100 p-6 flex justify-center gap-6 z-40">
+    <button (click)="aceptarSolicitud()"
+      class="flex-1 max-w-md py-4 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl font-bold shadow-lg shadow-emerald-100 transition-all active:scale-[0.98]">
+      Aceptar solicitud
+    </button>
+    <button (click)="rechazarSolicitud()"
+      class="flex-1 max-w-md py-4 bg-[#EF4444] hover:bg-[#DC2626] text-white rounded-xl font-bold shadow-lg shadow-red-100 transition-all active:scale-[0.98]">
+      Rechazar solicitud
+    </button>
+  </div>
+
+  <!-- Lightbox -->
+  <div *ngIf="selectedImage" 
+    class="fixed inset-0 z-[9999] bg-slate-900/90 flex items-center justify-center p-8 animate-in fade-in duration-300"
+    (click)="cerrarLightbox()">
+    <img [src]="selectedImage.url_archivo" class="max-w-full max-h-full rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+    <button class="absolute top-8 right-8 text-white/50 hover:text-white transition-colors">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+</div>

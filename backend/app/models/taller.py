@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.models.base import Base
 
@@ -14,9 +14,10 @@ class Taller(Base):
     longitud = Column(Float, nullable=True)
     telefono = Column(String(20), nullable=True)
     calificacion_promedio = Column(Float, default=0.0, nullable=True)
+    is_active = Column(Boolean, default=True)
 
     # realcion de uno a uno taller----administrador
-    administrador = relationship("Administrador", back_populates="taller")
+    administrador = relationship("Administrador", back_populates="taller", foreign_keys="Administrador.taller_id")
 
     # relacion uno a muchos taller-----mecanico
     mecanicos = relationship("Mecanico", back_populates="taller")

@@ -1,0 +1,139 @@
+<div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
+
+  <!-- Dashboard Financiero (Cards Superiores) -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    
+    <!-- Ingresos Totales -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-300">
+      <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Ingresos totales</p>
+      <h2 class="text-2xl font-black text-slate-900 mb-1">{{ formatCurrency(resumen.ingresosTotales) }}</h2>
+      <span class="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded font-bold">Este mes</span>
+    </div>
+
+    <!-- Comisión Plataforma -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
+      <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Comisión plataforma (10%)</p>
+      <h2 class="text-2xl font-black text-slate-900 mb-1">{{ formatCurrency(resumen.comisionesPlataforma) }}</h2>
+      <span class="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded font-bold">Este mes</span>
+    </div>
+
+    <!-- Neto a recibir -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-700">
+      <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Neto a recibir</p>
+      <h2 class="text-2xl font-black text-[#4F46E5] mb-1">{{ formatCurrency(resumen.netoRecibir) }}</h2>
+      <span class="text-[10px] bg-indigo-50 text-[#4F46E5] px-2 py-0.5 rounded font-bold">Este mes</span>
+    </div>
+
+    <!-- Pendiente de pago -->
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-1000">
+      <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Pendiente de pago</p>
+      <h2 class="text-2xl font-black text-slate-900 mb-1">{{ formatCurrency(resumen.pendientePago) }}</h2>
+      <p class="text-[10px] text-slate-400 font-medium mt-1">Próximo pago: 10/05/2024</p>
+    </div>
+  </div>
+
+  <!-- Contenedor Historial -->
+  <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    
+    <!-- Filtros y Header de Tabla -->
+    <div class="px-8 py-6 border-b border-slate-50 flex flex-wrap justify-between items-center gap-4">
+      <h3 class="text-lg font-extrabold text-slate-900">Historial de pagos</h3>
+      
+      <div class="flex items-center gap-3">
+        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Mostrar:</label>
+        <div class="relative">
+          <select [(ngModel)]="filtroFecha" (change)="cargarDatos()"
+            class="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold text-slate-600 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all pr-10">
+            <option value="semana">Esta semana</option>
+            <option value="mes">Este mes</option>
+            <option value="año">Este año</option>
+          </select>
+          <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="py-32 flex flex-col items-center">
+      <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p class="text-slate-400 font-bold text-sm">Sincronizando flujo de caja...</p>
+    </div>
+
+    <!-- Tabla -->
+    <div *ngIf="!loading" class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-50/50">
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Fecha</th>
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Servicios</th>
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Ingresos brutos</th>
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Comisión (10%)</th>
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Neto</th>
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Estado</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          <tr *ngFor="let reg of getFilteredRegistros()" class="hover:bg-slate-50/30 transition-colors group">
+            
+            <!-- Fecha -->
+            <td class="px-8 py-5">
+              <span class="text-sm font-bold text-slate-800">{{ reg.fecha | date:'dd/MM/yyyy' }}</span>
+              <p class="text-[10px] text-slate-400 font-medium">Periodo {{ reg.fecha | date:'ww' }}</p>
+            </td>
+
+            <!-- Servicios -->
+            <td class="px-8 py-5 text-center">
+              <span class="text-sm font-bold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
+                {{ reg.servicios_count }}
+              </span>
+            </td>
+
+            <!-- Ingresos Brutos -->
+            <td class="px-8 py-5 text-right">
+              <span class="text-sm font-bold text-slate-800">{{ formatCurrency(reg.ingresos_brutos) }}</span>
+            </td>
+
+            <!-- Comisión -->
+            <td class="px-8 py-5 text-right">
+              <span class="text-sm font-medium text-slate-400">{{ formatCurrency(reg.comision_monto) }}</span>
+            </td>
+
+            <!-- Neto -->
+            <td class="px-8 py-5 text-right">
+              <span class="text-sm font-black text-[#4F46E5]">{{ formatCurrency(reg.neto) }}</span>
+            </td>
+
+            <!-- Estado -->
+            <td class="px-8 py-5">
+              <div class="flex justify-center">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                  [ngClass]="{
+                    'bg-green-50 text-green-600': reg.estado === 'Pagado',
+                    'bg-orange-50 text-orange-600': reg.estado === 'Pendiente'
+                  }">
+                  {{ reg.estado }}
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pie de Tabla -->
+    <div class="px-8 py-6 border-t border-slate-50 bg-slate-50/30 flex justify-between items-center">
+      <span class="text-xs font-medium text-slate-500">
+        Mostrando 1 a {{ getFilteredRegistros().length }} de {{ registros.length }} registros
+      </span>
+      <div class="flex gap-2">
+        <button class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+        <button class="w-9 h-9 flex items-center justify-center rounded-xl border border-indigo-500 bg-indigo-50 text-[#4F46E5] font-black text-xs">1</button>
+        <button class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition-all">2</button>
+        <button class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+</div>

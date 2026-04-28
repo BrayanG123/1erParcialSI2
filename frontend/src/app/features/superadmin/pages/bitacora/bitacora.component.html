@@ -1,0 +1,192 @@
+<div class="space-y-6 min-h-screen bg-white  -m-4 md:-m-6 p-4 md:p-8 transition-colors duration-300">
+  <!-- Header Card -->
+  <div class="rounded-2xl border border-slate-200  bg-slate-50  p-6 backdrop-blur-sm shadow-sm ">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-500/20">
+          <ng-icon name="heroShieldCheck" class="text-2xl"></ng-icon>
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 ">Bitácora de Auditoría</h1>
+          <p class="text-sm text-slate-500  mt-1">Registro detallado de acciones y eventos críticos en el sistema.</p>
+        </div>
+      </div>
+      <button 
+        (click)="loadLogs()"
+        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white  text-slate-600  border border-slate-200  hover:bg-slate-50 :bg-slate-700 transition-all font-bold text-sm shadow-sm"
+      >
+        <ng-icon name="heroArrowPath" [class.animate-spin]="loading()"></ng-icon>
+        Refrescar
+      </button>
+    </div>
+  </div>
+
+  <!-- Advanced Filters Bar -->
+  <div class="rounded-2xl border border-slate-200  bg-slate-50  p-5 shadow-sm ">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- User Filter -->
+      <div class="relative group">
+        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+          <ng-icon name="heroUser"></ng-icon>
+        </span>
+        <input 
+          type="text" 
+          placeholder="ID Usuario / Descrip..." 
+          [(ngModel)]="filterUser"
+          class="w-full bg-white  border border-slate-200  rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900  placeholder:text-slate-400 shadow-sm"
+        >
+      </div>
+
+      <!-- Date Filter -->
+      <div class="relative group">
+        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+          <ng-icon name="heroClock"></ng-icon>
+        </span>
+        <input 
+          type="date" 
+          [(ngModel)]="filterDate"
+          class="w-full bg-white  border border-slate-200  rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900  shadow-sm"
+        >
+      </div>
+
+      <!-- Module Filter -->
+      <div class="relative group">
+        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+          <ng-icon name="heroBriefcase"></ng-icon>
+        </span>
+        <select 
+          [(ngModel)]="filterModule"
+          class="w-full bg-white  border border-slate-200  rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900  appearance-none cursor-pointer shadow-sm"
+        >
+          <option value="">Todos los Módulos</option>
+          <option value="AUTH">Autenticación</option>
+          <option value="USUARIOS">Usuarios</option>
+          <option value="VEHICULOS">Vehículos</option>
+          <option value="INCIDENTES">Incidentes</option>
+        </select>
+      </div>
+
+      <!-- Action Filter -->
+      <div class="relative group">
+        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+          <ng-icon name="heroCommandLine"></ng-icon>
+        </span>
+        <input 
+          type="text" 
+          placeholder="Acción (LOGIN, CREATE...)" 
+          [(ngModel)]="filterAction"
+          class="w-full bg-white  border border-slate-200  rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900  placeholder:text-slate-400 shadow-sm"
+        >
+      </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-200 ">
+      <button 
+        (click)="clearFilters()"
+        class="px-5 py-2 text-sm font-bold text-slate-500 hover:text-slate-700  :text-slate-200 transition-colors"
+      >
+        Limpiar Filtros
+      </button>
+      <button 
+        class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-2"
+      >
+        <ng-icon name="heroFunnel"></ng-icon>
+        Aplicar Filtros
+      </button>
+    </div>
+  </div>
+
+  <!-- Audit Table Section -->
+  <div class="rounded-2xl border border-slate-200  bg-white  overflow-hidden shadow-sm ">
+    <div class="overflow-x-auto custom-scrollbar">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-slate-50  text-slate-600  font-bold border-b border-slate-200  uppercase tracking-wider">
+          <tr>
+            <th class="px-6 py-4">Fecha / Hora</th>
+            <th class="px-6 py-4">Usuario ID</th>
+            <th class="px-6 py-4">Módulo</th>
+            <th class="px-6 py-4">Acción</th>
+            <th class="px-6 py-4">Descripción</th>
+            <th class="px-6 py-4 text-right">Resultado</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 ">
+          <!-- Loading -->
+          <tr *ngIf="loading()">
+            <td colspan="6" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-slate-500  animate-pulse font-medium">Leyendo bitácora...</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Rows -->
+          <tr *ngFor="let l of paginatedLogs()" class="hover:bg-slate-50 :bg-slate-800/30 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-slate-900  font-medium">{{ l.fecha | date:'dd/MM/yyyy' }}</div>
+              <div class="text-xs text-slate-500 ">{{ l.fecha | date:'HH:mm:ss' }}</div>
+            </td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-0.5 rounded bg-slate-100  text-slate-600  text-xs font-mono border border-slate-200 ">
+                ID: {{ l.usuario_id || 'N/A' }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <span [class]="'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ' + getModuleBadgeClass(l.modulo)">
+                {{ l.modulo || 'SISTEMA' }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <span class="font-bold text-slate-700 ">
+                {{ l.accion }}
+              </span>
+            </td>
+            <td class="px-6 py-4 max-w-xs truncate text-slate-600 " [title]="l.descripcion">
+              {{ l.descripcion }}
+            </td>
+            <td class="px-6 py-4 text-right">
+              <span [class]="'px-2.5 py-1 rounded-lg text-xs font-bold ' + getResultBadgeClass(l.accion)">
+                {{ (l.accion.toLowerCase().includes('error') || l.accion.toLowerCase().includes('fallid')) ? 'ERROR' : 'ÉXITO' }}
+              </span>
+            </td>
+          </tr>
+
+          <!-- Empty -->
+          <tr *ngIf="!loading() && filteredLogs().length === 0">
+            <td colspan="6" class="px-6 py-12 text-center text-slate-500  font-medium italic">
+              No se encontraron registros de auditoría que coincidan con los filtros.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="bg-slate-50  px-6 py-5 border-t border-slate-200  flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-xs text-slate-500  font-bold uppercase tracking-wider">
+        Mostrando <span class="text-slate-900 ">{{ (currentPage() - 1) * pageSize() + 1 }}</span> - <span class="text-slate-900 ">{{ Math.min(currentPage() * pageSize(), filteredLogs().length) }}</span> de <span class="text-slate-900 ">{{ filteredLogs().length }}</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button 
+          [disabled]="currentPage() === 1"
+          (click)="currentPage.set(currentPage() - 1)"
+          class="flex items-center gap-1 px-4 py-2 rounded-xl bg-white  text-slate-600  border border-slate-200  disabled:opacity-30 hover:bg-slate-50 :bg-slate-700 transition-all text-xs font-bold shadow-sm"
+        >
+          <ng-icon name="heroChevronLeft"></ng-icon>
+          Anterior
+        </button>
+        <button 
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          (click)="currentPage.set(currentPage() + 1)"
+          class="flex items-center gap-1 px-4 py-2 rounded-xl bg-white  text-slate-600  border border-slate-200  disabled:opacity-30 hover:bg-slate-50 :bg-slate-700 transition-all text-xs font-bold shadow-sm"
+        >
+          Siguiente
+          <ng-icon name="heroChevronRight"></ng-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

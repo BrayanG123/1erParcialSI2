@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.usuario import Usuario
-from app.models.asignacion_servicio import EstadoAsignacion
+from app.models.asignacion_servicio import AsignacionServicio, EstadoAsignacion
+from app.models.usuario import Mecanico
 from app.schemas.asignacion_servicio import (
     AsignacionCreate,
     AsignacionRead,
@@ -18,32 +19,26 @@ from app.crud.asignacion_servicio import (
     aceptar_asignacion,
     rechazar_asignacion,
     actualizar_estado_asignacion,
-    get_todas_las_asignaciones,
 )
-
 from app.crud.incidente import get_incidente_por_id, marcar_no_disponible
-
 from app.core.dependencies import (
     get_current_administrador,
     get_current_mecanico,
 )
 from app.services.bitacora import BitacoraService
-
+from app.models.incidente import EstadoIncidente
 
 
 router = APIRouter(prefix="/asignaciones", tags=["Asignaciones de Servicio"])
 
 
-
-# ADMIN — crear una asignación (asignar mecánico a un incidente)
+# ADMIN — crear una asignación
 @router.post("/", response_model=AsignacionRead, status_code=status.HTTP_201_CREATED)
 def crear_nueva_asignacion(
     datos: AsignacionCreate,
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
-    """El admin asigna un mecánico a un incidente pendiente."""
-    # Verificar que el incidente no tenga ya una asignación activa
     existente = get_asignacion_por_incidente(db, datos.incidente_id)
     if existente and existente.estado not in (
         EstadoAsignacion.rechazada,
@@ -54,14 +49,25 @@ def crear_nueva_asignacion(
             detail="El incidente ya tiene una asignación activa"
         )
 
-    asignacion = crear_asignacion(db, datos)
-
     incidente = get_incidente_por_id(db, datos.incidente_id)
     if not incidente:
         raise HTTPException(status_code=404, detail="Incidente no encontrado")
-    if incidente.estado != EstadoIncidente.disponible:   # necesitas importar EstadoIncidente
+    if incidente.estado != EstadoIncidente.disponible:
         raise HTTPException(status_code=400, detail="El incidente no está disponible")
-    
+
+    # Verificar que el mecánico pertenece al taller del admin
+    taller_id = usuario.perfil_administrador.taller_id
+    mecanico = db.query(Mecanico).filter(
+        Mecanico.id == datos.mecanico_id,
+        Mecanico.taller_id == taller_id
+    ).first()
+    if not mecanico:
+        raise HTTPException(
+            status_code=403,
+            detail="El mecánico no pertenece a tu taller"
+        )
+
+    asignacion = crear_asignacion(db, datos)
     marcar_no_disponible(db, incidente)
 
     BitacoraService.registrar(
@@ -73,14 +79,21 @@ def crear_nueva_asignacion(
     return asignacion
 
 
-
-# ADMIN — listar todas las asignaciones
+# ADMIN — listar asignaciones de SU taller
 @router.get("/", response_model=list[AsignacionRead])
 def listar_asignaciones(
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
-    return get_todas_las_asignaciones(db)
+    taller_id = usuario.perfil_administrador.taller_id
+
+    return (
+        db.query(AsignacionServicio)
+        .join(AsignacionServicio.mecanico)
+        .filter(Mecanico.taller_id == taller_id)
+        .order_by(AsignacionServicio.fecha_creacion.desc())
+        .all()
+    )
 
 
 # MECÁNICO — ver mis asignaciones
@@ -89,13 +102,11 @@ def mis_asignaciones(
     usuario: Usuario = Depends(get_current_mecanico),
     db: Session = Depends(get_db),
 ):
-    """El mecánico ve todas las asignaciones que le han hecho."""
     mecanico = usuario.perfil_mecanico
     return get_asignaciones_de_mecanico(db, mecanico.id)
 
 
-
-# ADMINISTRADOR — rechazar una asignación
+# ADMIN — rechazar una asignación de su taller
 @router.patch("/{asignacion_id}/rechazar", response_model=AsignacionRead)
 def rechazar_mi_asignacion(
     asignacion_id: int,
@@ -103,13 +114,19 @@ def rechazar_mi_asignacion(
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
-    asignacion = get_asignacion_por_id(db, asignacion_id)
-    if not asignacion:
-        raise HTTPException(status_code=404, detail="Asignación no encontrada")
+    taller_id = usuario.perfil_administrador.taller_id
 
-    administrador = usuario.perfil_administrador
-    if asignacion.administrador_id != administrador.id:
-        raise HTTPException(status_code=403, detail="Esta asignación no es tuya")
+    asignacion = (
+        db.query(AsignacionServicio)
+        .join(AsignacionServicio.mecanico)
+        .filter(
+            AsignacionServicio.id == asignacion_id,
+            Mecanico.taller_id == taller_id
+        )
+        .first()
+    )
+    if not asignacion:
+        raise HTTPException(status_code=404, detail="Asignación no encontrada o no pertenece a tu taller")
 
     if asignacion.estado != EstadoAsignacion.pendiente:
         raise HTTPException(
@@ -120,8 +137,7 @@ def rechazar_mi_asignacion(
     return rechazar_asignacion(db, asignacion, datos.motivo_rechazo)
 
 
-
-# MECÁNICO — avanzar el estado de su asignacion (el mecanico sí puede editar los estados de su asignacion)
+# MECÁNICO — avanzar estado de su asignación
 @router.patch("/{asignacion_id}/estado", response_model=AsignacionRead)
 def cambiar_estado_asignacion(
     asignacion_id: int,
@@ -129,10 +145,6 @@ def cambiar_estado_asignacion(
     usuario: Usuario = Depends(get_current_mecanico),
     db: Session = Depends(get_db),
 ):
-    """
-    El mecánico avanza el estado de su asignación:
-    aceptada → en_camino → en_servicio → completada
-    """
     asignacion = get_asignacion_por_id(db, asignacion_id)
     if not asignacion:
         raise HTTPException(status_code=404, detail="Asignación no encontrada")
@@ -141,7 +153,6 @@ def cambiar_estado_asignacion(
     if asignacion.mecanico_id != mecanico.id:
         raise HTTPException(status_code=403, detail="Esta asignación no es tuya")
 
-    # Transiciones válidas
     transiciones_validas = {
         EstadoAsignacion.aceptada:    [EstadoAsignacion.en_camino,   EstadoAsignacion.cancelada],
         EstadoAsignacion.en_camino:   [EstadoAsignacion.en_servicio, EstadoAsignacion.cancelada],
@@ -159,15 +170,24 @@ def cambiar_estado_asignacion(
     return actualizar_estado_asignacion(db, asignacion, datos)
 
 
-
-# COMPARTIDO — ver una asignación por ID
+# COMPARTIDO — obtener una asignación por ID
 @router.get("/{asignacion_id}", response_model=AsignacionRead)
 def obtener_asignacion(
     asignacion_id: int,
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
-    asignacion = get_asignacion_por_id(db, asignacion_id)
+    taller_id = usuario.perfil_administrador.taller_id
+
+    asignacion = (
+        db.query(AsignacionServicio)
+        .join(AsignacionServicio.mecanico)
+        .filter(
+            AsignacionServicio.id == asignacion_id,
+            Mecanico.taller_id == taller_id
+        )
+        .first()
+    )
     if not asignacion:
-        raise HTTPException(status_code=404, detail="Asignación no encontrada")
+        raise HTTPException(status_code=404, detail="Asignación no encontrada o no pertenece a tu taller")
     return asignacion

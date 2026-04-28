@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.usuario import Usuario
-from app.models.asignacion_servicio import EstadoAsignacion
+from app.models.asignacion_servicio import AsignacionServicio, EstadoAsignacion
+from app.models.usuario import Mecanico
+from app.models.servicio_realizado import ServicioRealizado as SR
 from app.schemas.servicio_realizado import ServicioRealizadoCreate, ServicioRealizadoRead
 from app.crud.asignacion_servicio import get_asignacion_por_id, actualizar_estado_asignacion
 from app.crud.servicio_realizado import (
@@ -20,7 +22,6 @@ from app.services.bitacora import BitacoraService
 router = APIRouter(prefix="/servicios-realizados", tags=["Servicios Realizados"])
 
 
-
 # ── MECÁNICO — registrar el servicio al completar su asignación ───────────────
 @router.post(
     "/asignacion/{asignacion_id}",
@@ -33,20 +34,14 @@ def registrar_servicio(
     usuario: Usuario = Depends(get_current_mecanico),
     db: Session = Depends(get_db),
 ):
-    """
-    El mecánico registra el servicio realizado al terminar su asignación.
-    Esto cambia automáticamente el estado de la asignación a 'completada'.
-    """
     asignacion = get_asignacion_por_id(db, asignacion_id)
     if not asignacion:
         raise HTTPException(status_code=404, detail="Asignación no encontrada")
 
-    # Solo el mecánico asignado puede registrar el servicio
     mecanico = usuario.perfil_mecanico
     if asignacion.mecanico_id != mecanico.id:
         raise HTTPException(status_code=403, detail="Esta asignación no es tuya")
 
-    # Solo se puede registrar si la asignación está en_servicio
     if asignacion.estado != EstadoAsignacion.en_servicio:
         raise HTTPException(
             status_code=400,
@@ -54,15 +49,12 @@ def registrar_servicio(
                    f"Estado actual: '{asignacion.estado.value}'"
         )
 
-    # Verificar que no exista ya un ServicioRealizado para esta asignación
     existente = get_servicio_por_asignacion(db, asignacion_id)
     if existente:
         raise HTTPException(status_code=400, detail="Esta asignación ya tiene un servicio registrado")
 
-    # Crear el registro del servicio
     servicio = crear_servicio_realizado(db, asignacion_id, datos)
 
-    # Marcar la asignación como completada automáticamente
     actualizar_estado_asignacion(
         db, asignacion, AsignacionEstadoUpdate(estado=EstadoAsignacion.completada)
     )
@@ -76,7 +68,6 @@ def registrar_servicio(
     return servicio
 
 
-
 # ── MECÁNICO — ver mis servicios realizados ───────────────────────────────────
 @router.get("/mis-servicios", response_model=list[ServicioRealizadoRead])
 def mis_servicios(
@@ -87,26 +78,47 @@ def mis_servicios(
     return get_servicios_de_mecanico(db, mecanico.id)
 
 
-
-# ── ADMIN — ver servicio de una asignación específica ────────────────────────
+# ── ADMIN — ver servicio de una asignación específica de SU taller ────────────
 @router.get("/asignacion/{asignacion_id}", response_model=ServicioRealizadoRead)
 def servicio_de_asignacion(
     asignacion_id: int,
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
+    taller_id = usuario.perfil_administrador.taller_id
+
+    # Verificar que la asignación pertenece al taller del admin
+    asignacion = (
+        db.query(AsignacionServicio)
+        .join(AsignacionServicio.mecanico)
+        .filter(
+            AsignacionServicio.id == asignacion_id,
+            Mecanico.taller_id == taller_id
+        )
+        .first()
+    )
+    if not asignacion:
+        raise HTTPException(status_code=404, detail="Asignación no encontrada o no pertenece a tu taller")
+
     servicio = get_servicio_por_asignacion(db, asignacion_id)
     if not servicio:
         raise HTTPException(status_code=404, detail="Esta asignación no tiene servicio registrado aún")
     return servicio
 
 
-
-# ── ADMIN — ver todos los servicios realizados ────────────────────────────────
+# ── ADMIN — ver todos los servicios realizados de SU taller ──────────────────
 @router.get("/", response_model=list[ServicioRealizadoRead])
 def listar_servicios(
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
-    from app.models.servicio_realizado import ServicioRealizado as SR
-    return db.query(SR).order_by(SR.fecha_realizado.desc()).all()
+    taller_id = usuario.perfil_administrador.taller_id
+
+    return (
+        db.query(SR)
+        .join(SR.asignacion)                  # SR → AsignacionServicio
+        .join(AsignacionServicio.mecanico)    # AsignacionServicio → Mecanico
+        .filter(Mecanico.taller_id == taller_id)
+        .order_by(SR.fecha_realizado.desc())
+        .all()
+    )

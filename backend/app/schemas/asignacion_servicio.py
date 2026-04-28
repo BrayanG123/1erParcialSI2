@@ -7,7 +7,7 @@ from app.models.asignacion_servicio import EstadoAsignacion
 
 # ── Creación (admin asigna mecánico a un incidente) 
 class AsignacionCreate(BaseModel):
-    asignacion_servicio_id: int
+    incidente_id: int  
     mecanico_id: int
     costo_estimado: Optional[float] = None
     distancia_km: Optional[float] = None
@@ -27,7 +27,7 @@ class AsignacionEstadoUpdate(BaseModel):
 # ── Lectura
 class AsignacionRead(BaseModel):
     id:              int
-    incidente:       int
+    incidente_id:    int   
     mecanico_id:     Optional[int]
     costo_estimado:  Optional[float]
     distancia_km:    Optional[float]

@@ -1,1 +1,43 @@
-/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+
+@theme {
+  /* Brand Identity - TailAdmin inspired */
+  --color-brand-500: #3C50E0;
+  --color-brand-600: #3142c5;
+  
+  --color-sidebar-bg: #1C2434;
+  --color-sidebar-text: #8A99AF;
+  --color-page-bg: #F1F5F9;
+  
+  --shadow-brand-button: 0px 3px 10px rgba(60, 80, 224, 0.2);
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-[#F1F5F9] text-[#1C2434] antialiased min-h-screen;
+  }
+
+  /* Force Light Mode - Removing all dark logic */
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}

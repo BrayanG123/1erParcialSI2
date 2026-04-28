@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, field_validator
 import re
 
 from app.models.usuario import RolUsuario
-from app.schemas.taller import TallerCreate
+from app.schemas.taller import TallerRead
 
 
 # Base: campos cimunes a varios schemas
@@ -86,6 +86,17 @@ class MecanicoRead(BaseModel):
     telefono: Optional[str]
     latitud: Optional[float]
     longitud: Optional[float]
+    taller_id: Optional[int] = None
+    taller: Optional[TallerRead] = None
+
+    model_config = {"from_attributes": True}
+
+
+class AdministradorRead(BaseModel):
+    id: int
+    usuario_id: int
+    taller_id: Optional[int] = None
+    taller: Optional[TallerRead] = None
 
     model_config = {"from_attributes": True}
 
@@ -115,7 +126,6 @@ class AdminConTallerCreate(BaseModel):
     @field_validator("username")
     @classmethod
     def validar_username(cls, v: str) -> str:
-        import re
         if not re.match(r"^[a-zA-Z0-9_]{3,50}$", v):
             raise ValueError("El username solo puede tener letras, números y guiones bajos (3-50 caracteres)")
         return v
@@ -126,6 +136,7 @@ class AdminConTallerCreate(BaseModel):
 class UsuarioConPerfil(UsuarioRead):
     perfil_cliente: Optional[ClienteRead] = None
     perfil_mecanico: Optional[MecanicoRead] = None
+    perfil_administrador: Optional[AdministradorRead] = None
 
 
 
@@ -141,7 +152,6 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     """Datos extraídos del payload del JWT."""
     usuario_id: Optional[int] = None
-    rol: Optional[int] = None
-    type: Optional[int] = None
+    rol: Optional[str] = None
+    type: Optional[str] = None
 
-    

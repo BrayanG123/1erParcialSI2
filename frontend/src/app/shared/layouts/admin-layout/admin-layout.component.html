@@ -1,0 +1,19 @@
+<div class="flex h-screen overflow-hidden bg-slate-50  transition-colors duration-300">
+  <app-sidebar></app-sidebar>
+
+  <div 
+    class="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300"
+    [ngClass]="{
+      'xl:ml-[290px]': (sidebarService.isExpanded$ | async) || (sidebarService.isHovered$ | async),
+      'xl:ml-[90px]': !((sidebarService.isExpanded$ | async) || (sidebarService.isHovered$ | async))
+    }"
+  >
+    <app-header></app-header>
+
+    <main class="w-full p-4 md:p-6">
+      <div class="w-full">
+    <router-outlet></router-outlet>
+  </div>
+    </main>
+  </div>
+</div>
