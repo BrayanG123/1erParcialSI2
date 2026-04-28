@@ -15,6 +15,9 @@ cloudinary.config(
 TIPOS_IMAGEN_PERMITIDOS = {"image/jpeg", "image/png", "image/webp"}
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 
+TIPOS_AUDIO_PERMITIDOS = {"audio/mpeg", "audio/mp4", "audio/aac", "audio/m4a", "audio/x-m4a"}
+MAX_BYTES_AUDIO = 10 * 1024 * 1024  # 10 MB
+
 def subir_imagen(archivo: UploadFile, carpeta: str) -> str:
     """
     Sube un archivo de imagen a Cloudinary y devuelve la URL segura (https).
@@ -35,6 +38,26 @@ def subir_imagen(archivo: UploadFile, carpeta: str) -> str:
         contenido,
         folder=carpeta,
         resource_type="image",
+        overwrite=True,
+    )
+    return resultado["secure_url"]
+
+
+def subir_audio(archivo: UploadFile, carpeta: str) -> str:
+    """
+    Sube un archivo de audio a Cloudinary como recurso 'video' (Cloudinary
+    trata audio y video bajo el mismo resource_type).
+    Devuelve la URL segura.
+    """
+    # Cloudinary recibe audio como resource_type="video"
+    contenido = archivo.file.read()
+    if len(contenido) > MAX_BYTES_AUDIO:
+        raise ValueError("El audio no puede superar 10 MB.")
+
+    resultado = cloudinary.uploader.upload(
+        contenido,
+        folder=carpeta,
+        resource_type="video",   # audio también usa "video" en Cloudinary
         overwrite=True,
     )
     return resultado["secure_url"]

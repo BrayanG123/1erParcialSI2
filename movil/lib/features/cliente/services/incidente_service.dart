@@ -80,5 +80,24 @@ class IncidenteService {
     }
   }
 
-
+  Future<Incidente> subirAudio({
+    required int incidenteId,
+    required String rutaAudio,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'audio': await MultipartFile.fromFile(
+          rutaAudio,
+          filename: rutaAudio.split('/').last,
+        ),
+      });
+      final response = await _dio.post(
+        '${ApiConstants.incidentes}/$incidenteId/audio',
+        data: formData,
+      );
+      return Incidente.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
 }

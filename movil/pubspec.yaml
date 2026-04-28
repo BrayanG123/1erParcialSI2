@@ -65,7 +65,7 @@ dependencies:
   image_picker: ^1.1.2
 
   # --- Grabación de audio ---
-  # record: ^5.2.1 comentado porq me esta dando problemas
+  record: ^5.2.1
 
   # --- Speech to text ---
   # speech_to_text: ^7.3.0

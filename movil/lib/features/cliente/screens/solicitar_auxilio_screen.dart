@@ -11,6 +11,9 @@ import 'package:movil/models/categoria.dart';
 import 'package:movil/models/vehiculo.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'dart:async';
+import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 
 class SolicitarAuxilioScreen extends StatelessWidget {
@@ -44,9 +47,18 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
   double? _longitud;
   File? _foto;
 
+  // Audio
+  final AudioRecorder _recorder = AudioRecorder();
+  String? _rutaAudio;           // path del archivo grabado
+  bool    _grabando = false;
+  int     _segundos = 0;
+  Timer?  _timer;
+
   @override
   void dispose() {
     _descripcionCtrl.dispose();
+    _timer?.cancel();
+    _recorder.dispose(); 
     super.dispose();
   }
 
@@ -74,13 +86,39 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
       vehiculoId:  _vehiculoSeleccionado?.id,
       categoriaId: _categoriaSeleccionada?.id,
       rutaFoto:    _foto?.path,   
+      rutaAudio:   _rutaAudio,
     );
   }
 
   Future<void> _elegirFoto() async {
+    final fuente = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined,
+                  color: Color(0xFF1565C0)),
+              title: const Text('Tomar foto con cámara'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined,
+                  color: Color(0xFF1565C0)),
+              title: const Text('Elegir de galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (fuente == null) return;
+
     final picker = ImagePicker();
     final imagen = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: fuente,
       maxWidth: 1024,
       maxHeight: 1024,
       imageQuality: 80,
@@ -88,6 +126,67 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
     if (imagen != null && mounted) {
       setState(() => _foto = File(imagen.path));
     }
+  }
+
+  Future<void> _iniciarGrabacion() async {
+    // Solicitar permiso de micrófono
+    final permiso = await Permission.microphone.request();
+    if (!permiso.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permiso de micrófono denegado'),
+            backgroundColor: Color(0xFFC62828),
+          ),
+        );
+      }
+      return;
+    }
+
+    final path =
+        '${Directory.systemTemp.path}/audio_incidente_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+    await _recorder.start(
+      const RecordConfig(encoder: AudioEncoder.aacLc),
+      path: path,
+    );
+
+    setState(() {
+      _grabando = true;
+      _segundos = 0;
+    });
+
+    // Contador de segundos
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _segundos++);
+    });
+  }
+
+  Future<void> _detenerGrabacion() async {
+    _timer?.cancel();
+    final path = await _recorder.stop();
+    setState(() {
+      _grabando  = false;
+      _rutaAudio = path;
+    });
+  }
+
+  void _eliminarAudio() {
+    if (_rutaAudio != null) {
+      final archivo = File(_rutaAudio!);
+      if (archivo.existsSync()) archivo.deleteSync();
+    }
+    setState(() {
+      _rutaAudio = null;
+      _grabando  = false;
+      _segundos  = 0;
+    });
+  }
+
+  String _formatearTiempo(int segundos) {
+    final min = segundos ~/ 60;
+    final seg = segundos % 60;
+    return '${min.toString().padLeft(2, '0')}:${seg.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -299,6 +398,24 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
                   const SizedBox(height: 16),
 
 
+                  // ─── Audio descriptivo ──
+                  const Text(
+                    'Audio descriptivo (opcional)',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  _WidgetGrabacion(
+                    grabando:    _grabando,
+                    rutaAudio:   _rutaAudio,
+                    segundos:    _segundos,
+                    formatear:   _formatearTiempo,
+                    onIniciar:   _iniciarGrabacion,
+                    onDetener:   _detenerGrabacion,
+                    onEliminar:  _eliminarAudio,
+                  ),
+                  const SizedBox(height: 16),
+
+
                   // --- Botón enviar ---
                   FilledButton.icon(
                     onPressed: cargandoEnvio 
@@ -327,6 +444,118 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+
+// ─── Widget de grabación de audio ──────────────────────────────────────────
+
+class _WidgetGrabacion extends StatelessWidget {
+  final bool     grabando;
+  final String?  rutaAudio;
+  final int      segundos;
+  final String   Function(int) formatear;
+  final VoidCallback onIniciar;
+  final VoidCallback onDetener;
+  final VoidCallback onEliminar;
+
+  const _WidgetGrabacion({
+    required this.grabando,
+    required this.rutaAudio,
+    required this.segundos,
+    required this.formatear,
+    required this.onIniciar,
+    required this.onDetener,
+    required this.onEliminar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Estado: audio ya grabado
+    if (rutaAudio != null && !grabando) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: const Color(0xFF2E7D32).withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_outline,
+                color: Color(0xFF2E7D32)),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Audio grabado',
+                style: TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline,
+                  color: Color(0xFFC62828)),
+              tooltip: 'Eliminar audio',
+              onPressed: onEliminar,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Estado: grabando
+    if (grabando) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFC62828).withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: const Color(0xFFC62828).withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.fiber_manual_record,
+                color: Color(0xFFC62828), size: 14),
+            const SizedBox(width: 8),
+            Text(
+              'Grabando  ${formatear(segundos)}',
+              style: const TextStyle(
+                  color: Color(0xFFC62828),
+                  fontWeight: FontWeight.w500),
+            ),
+            const Spacer(),
+            ElevatedButton.icon(
+              onPressed: onDetener,
+              icon: const Icon(Icons.stop, size: 18),
+              label: const Text('Detener'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC62828),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 8),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Estado: sin audio
+    return OutlinedButton.icon(
+      onPressed: onIniciar,
+      icon: const Icon(Icons.mic_outlined),
+      label: const Text('Grabar audio descriptivo'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        foregroundColor: const Color(0xFF1565C0),
+        side: const BorderSide(color: Color(0xFF1565C0)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

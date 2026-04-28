@@ -49,6 +49,7 @@ class IncidenteCubit extends Cubit<IncidenteState>{
     int? vehiculoId,
     int? categoriaId,
     String? rutaFoto,   
+    String? rutaAudio,
   }) async {
     emit(const IncidenteCargando());
     try {
@@ -61,11 +62,19 @@ class IncidenteCubit extends Cubit<IncidenteState>{
         categoriaId: categoriaId,
       );
 
-      // Si el usuario adjuntó foto, subirla ahora
+      // Subir foto si existe
       if (rutaFoto != null) {
         incidente = await _incidenteService.subirFoto(
           incidenteId: incidente.id,
           rutaFoto:    rutaFoto,
+        );
+      }
+
+      // Subir audio si existe 
+      if (rutaAudio != null) {
+        incidente = await _incidenteService.subirAudio(
+          incidenteId: incidente.id,
+          rutaAudio:   rutaAudio,
         );
       }
 

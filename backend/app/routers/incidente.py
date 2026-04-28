@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
-from app.services.cloudinary_service import subir_imagen
+from app.services.cloudinary_service import subir_imagen, subir_audio
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -82,6 +82,31 @@ def subir_foto_incidente(
     db.commit()
     db.refresh(incidente)
     return incidente
+
+
+# CLIENTE — subir audio descriptivo a un incidente propio ─────────────────
+@router.post("/{incidente_id}/audio", response_model=IncidenteRead)
+def subir_audio_incidente(
+    incidente_id: int,
+    audio: UploadFile = File(...),
+    usuario: Usuario = Depends(get_current_cliente),
+    db: Session = Depends(get_db),
+):
+    """El cliente sube un audio describiendo su problema."""
+    incidente = get_incidente_por_id(db, incidente_id)
+    if not incidente or incidente.cliente_id != usuario.perfil_cliente.id:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+
+    try:
+        url = subir_audio(audio, carpeta="incidentes/audios")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    incidente.audio_descripcion = url
+    db.commit()
+    db.refresh(incidente)
+    return incidente
+
 
 
 # CLIENTE — ver la asignación de su propio incidente

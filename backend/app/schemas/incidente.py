@@ -38,6 +38,7 @@ class IncidenteRead(IncidenteBase):
     estado: EstadoIncidente
     resumen_ia: Optional[str] = None
     foto_incidente: Optional[str] = None
+    audio_descripcion: Optional[str] = None
     cliente_id: int
 
     model_config = {"from_attributes": True}

@@ -21,6 +21,7 @@ class Incidente(Base):
     estado      = Column(SAEnum(EstadoIncidente), default=EstadoIncidente.disponible, nullable=False)
     resumen_ia  = Column(Text, nullable=True)   # resumenIA del diagrama
     foto_incidente = Column(String(500), nullable=True)
+    audio_descripcion = Column(String(500), nullable=True)
 
     # --- Foreign Keys ---
     cliente_id  = Column(Integer, ForeignKey("clientes.id",  ondelete="CASCADE"),  nullable=False)
