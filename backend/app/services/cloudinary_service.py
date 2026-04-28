@@ -15,7 +15,7 @@ cloudinary.config(
 TIPOS_IMAGEN_PERMITIDOS = {"image/jpeg", "image/png", "image/webp"}
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 
-TIPOS_AUDIO_PERMITIDOS = {"audio/mpeg", "audio/mp4", "audio/aac", "audio/m4a", "audio/x-m4a"}
+TIPOS_AUDIO_PERMITIDOS = {"audio/mpeg", "audio/mp4", "audio/mp3", "audio/aac", "audio/m4a", "audio/x-m4a"}
 MAX_BYTES_AUDIO = 10 * 1024 * 1024  # 10 MB
 
 def subir_imagen(archivo: UploadFile, carpeta: str) -> str:

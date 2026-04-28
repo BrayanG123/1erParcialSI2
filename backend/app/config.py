@@ -21,6 +21,19 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
 
+    # Azure Speech to Text
+    AZURE_SPEECH_KEY: str = ""
+    AZURE_SPEECH_REGION: str = "southcentralus"
+    AZURE_SPEECH_LANGUAGE: str = "es-ES"
+
+    # Google Gemini
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-1.5-flash"
+
+    # Groq
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+
     # indicar a pydantic donde esta el .env
     model_config = SettingsConfigDict(
         env_file=Path(__file__).parent.parent / ".env",

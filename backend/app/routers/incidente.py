@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+# para la ia
+from app.services.ia.azure_speech_service import transcribir_audio
+from app.services.ia.procesador_groq import diagnosticar_vehiculo
+from app.schemas.procesamiento_ia import ProcesamientoIARead
+
+
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from app.services.cloudinary_service import subir_imagen, subir_audio
 from sqlalchemy.orm import Session
 
@@ -107,6 +113,105 @@ def subir_audio_incidente(
     db.refresh(incidente)
     return incidente
 
+
+# ── CLIENTE — transcribir audio y generar diagnóstico ──────────────────────────
+@router.post(
+    "/{incidente_id}/analizar-audio",
+    response_model=ProcesamientoIARead,
+    summary="Transcribe el audio del incidente y genera un diagnóstico con Azure IA",
+)
+def analizar_audio_incidente(
+    incidente_id: int,
+    audio: UploadFile = File(..., description="Archivo de audio WAV u OGG (máx. 60 segundos)"),
+    usuario: Usuario = Depends(get_current_cliente),
+    db: Session = Depends(get_db),
+):
+    """
+    Flujo completo:
+    1. Lee el audio subido por el cliente.
+    2. Lo envía a Azure Speech to Text → obtiene el texto transcrito.
+    3. Envía el texto a Google Gemini → obtiene diagnóstico vehicular.
+    4. Guarda el diagnóstico en incidente.resumen_ia.
+    5. Devuelve el registro ProcesamientoIA con el resultado.
+    """
+    incidente = get_incidente_por_id(db, incidente_id)
+    if not incidente or incidente.cliente_id != usuario.perfil_cliente.id:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+
+    # Leer el audio en memoria
+    audio_bytes = audio.file.read()
+    if len(audio_bytes) == 0:
+        raise HTTPException(status_code=400, detail="El archivo de audio está vacío")
+
+    # Paso 1 — Transcribir con Azure Speech
+    try:
+        texto_transcrito = transcribir_audio(
+            audio_bytes=audio_bytes,
+            content_type=audio.content_type or "audio/wav",
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=422, detail=f"Error al transcribir audio: {e}")
+
+    if not texto_transcrito:
+        raise HTTPException(
+            status_code=422,
+            detail="No se pudo extraer texto del audio. Intenta grabar de nuevo con más claridad.",
+        )
+
+    # Paso 2 — Diagnosticar con Google Gemini
+    procesamiento = diagnosticar_vehiculo(
+        db=db,
+        incidente_id=incidente_id,
+        texto=texto_transcrito,
+    )
+
+    BitacoraService.registrar(
+        db=db,
+        usuario_id=usuario.id,
+        accion="ANALIZAR_AUDIO_IA",
+        descripcion=f"Incidente #{incidente_id} analizado con Azure Speech + Gemini",
+    )
+
+    return procesamiento
+
+
+# ── CLIENTE — generar diagnóstico desde texto ─────────────────────────────────
+@router.post(
+    "/{incidente_id}/analizar-texto",
+    response_model=ProcesamientoIARead,
+    summary="Genera un diagnóstico vehicular desde una descripción de texto",
+)
+def analizar_texto_incidente(
+    incidente_id: int,
+    descripcion: str = Form(..., description="Descripción del problema en texto libre"),
+    usuario: Usuario = Depends(get_current_cliente),
+    db: Session = Depends(get_db),
+):
+    """
+    Recibe una descripción de texto del cliente y la envía directamente
+    a Google Gemini para generar el diagnóstico.
+    """
+    incidente = get_incidente_por_id(db, incidente_id)
+    if not incidente or incidente.cliente_id != usuario.perfil_cliente.id:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+
+    if not descripcion.strip():
+        raise HTTPException(status_code=400, detail="La descripción no puede estar vacía")
+
+    procesamiento = diagnosticar_vehiculo(
+        db=db,
+        incidente_id=incidente_id,
+        texto=descripcion,
+    )
+
+    BitacoraService.registrar(
+        db=db,
+        usuario_id=usuario.id,
+        accion="ANALIZAR_TEXTO_IA",
+        descripcion=f"Incidente #{incidente_id} analizado con texto por Gemini",
+    )
+
+    return procesamiento
 
 
 # CLIENTE — ver la asignación de su propio incidente
