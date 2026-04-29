@@ -1,0 +1,62 @@
+<div class="p-6 bg-gray-50  min-h-screen">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800 ">Gestión de Servicios</h2>
+            <p class="text-gray-500 text-sm">Configura las categorías de auxilio para el taller</p>
+        </div>
+        <button (click)="abrirModal()"
+            class="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg transition-all">
+            + Nuevo Servicio
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div *ngFor="let s of servicios"
+            class="bg-white  p-6 rounded-2xl border border-gray-100  shadow-sm">
+            <div class="flex justify-between items-start mb-4">
+                <span
+                    class="bg-brand-100  text-brand-600  text-xs font-bold px-2 py-1 rounded">
+                    Prioridad {{ s.prioridad }}
+                </span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800  mb-2">{{ s.nombre }}</h3>
+            <p class="text-sm text-gray-500  mb-6">{{ s.descripcion }}</p>
+            <button (click)="borrarServicio(s.id)"
+                class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors font-medium">
+                Eliminar
+            </button>
+        </div>
+    </div>
+
+    <div *ngIf="showModal" class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-md" (click)="cerrarModal()"></div>
+        <div class="relative bg-white  w-full max-w-md rounded-2xl shadow-2xl p-6">
+            <h3 class="text-xl font-bold mb-6 ">Nuevo Servicio de Registro</h3>
+
+            <form [formGroup]="servicioForm" (ngSubmit)="guardar()" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium  mb-1">Nombre del Servicio</label>
+                    <input type="text" formControlName="nombre" placeholder="Ej. Cambio de Aceite"
+                        class="w-full p-2.5 rounded-xl border   outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium  mb-1">Descripción</label>
+                    <input type="text" formControlName="descripcion" placeholder="Ej. Cambio de aceite sintético 5W30"
+                        class="w-full p-2.5 rounded-xl border   outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium  mb-1">Prioridad (1-5)</label>
+                    <input type="number" formControlName="prioridad"
+                        class="w-full p-2.5 rounded-xl border   outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <button type="submit" [disabled]="servicioForm.invalid || loading"
+                    class="w-full bg-brand-500 text-white py-3 rounded-xl font-bold shadow-lg disabled:opacity-50 transition-all">
+                    {{ loading ? 'Guardando...' : 'Guardar Servicio' }}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

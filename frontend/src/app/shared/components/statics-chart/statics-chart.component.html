@@ -1,0 +1,65 @@
+<div class="grid grid-cols-12 gap-6 w-full mx-0">
+  
+  <div class="col-span-12 xl:col-span-8 p-6 bg-white rounded-2xl border border-gray-200   shadow-sm flex flex-col justify-between">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h4 class="text-lg font-bold text-gray-800  uppercase tracking-tight">Ingresos Mensuales</h4>
+        <p class="text-xs text-gray-500 font-medium">Balance de facturación del taller</p>
+      </div>
+      <span class="text-xs font-black text-blue-600 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">2026</span>
+    </div>
+
+    <div class="flex items-end justify-between gap-2 h-64 px-1 w-full">
+      <div *ngFor="let value of salesData" 
+           [style.height.%]="(value / 400) * 100" 
+           class="w-full bg-blue-500 rounded-t-md hover:bg-blue-400 transition-all cursor-pointer group relative">
+        <span class="absolute -top-9 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 font-bold">
+          ${{value}}
+        </span>
+      </div>
+    </div>
+    
+    <div class="w-full h-px bg-gray-100  mt-4"></div>
+    <div class="flex justify-between mt-3 text-[10px] text-gray-400 uppercase font-black px-1 tracking-widest">
+      <span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span>
+      <span>Jul</span><span>Ago</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dic</span>
+    </div>
+  </div>
+
+  <div class="col-span-12 xl:col-span-4 p-6 bg-white rounded-2xl border border-gray-200   shadow-sm flex flex-col justify-between">
+    <div>
+      <h4 class="text-lg font-bold text-gray-800  mb-1 uppercase tracking-tight">Capacidad Actual</h4>
+      <p class="text-xs text-gray-500 mb-8 font-medium text-center">Disponibilidad de bahías</p>
+      
+      <div class="flex flex-col items-center justify-center py-6">
+        <div class="relative flex items-center justify-center w-52 h-52 rounded-full border-[16px] border-blue-500 border-t-transparent border-r-blue-400/40 rotate-45">
+          <div class="absolute -rotate-45 flex flex-col items-center">
+            <span class="text-4xl font-black ">78%</span>
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ocupado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6 mt-6">
+      <div>
+        <div class="flex items-center justify-between text-[11px] mb-2">
+          <span class="text-gray-400 font-bold uppercase">Mecánica rápida</span>
+          <span class="font-black ">12/15</span>
+        </div>
+        <div class="w-full bg-gray-100  h-2.5 rounded-full overflow-hidden">
+          <div class="bg-blue-500 h-full rounded-full w-[80%]"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between text-[11px] mb-2">
+          <span class="text-gray-400 font-bold uppercase">Latonería y Pintura</span>
+          <span class="font-black ">4/10</span>
+        </div>
+        <div class="w-full bg-gray-100  h-2.5 rounded-full overflow-hidden">
+          <div class="bg-blue-300 h-full rounded-full w-[40%]"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+/* Estilos específicos para el componente de evidencias */
+:host {
+  display: block;
+}
+
+/* Animaciones suaves */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Efecto de zoom en hover */
+.group:hover img {
+  transform: scale(1.1);
+}
+
+/* Modal backdrop */
+.fixed {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Asegurar que el lightbox sea accesible */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}

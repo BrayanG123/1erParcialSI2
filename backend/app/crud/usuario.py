@@ -27,7 +27,7 @@ def get_usuarios(db: Session, skip: int = 0, limit: int = 100) -> list[Usuario]:
 
 
 # CREATE
-def crear_usuario(db: Session, datos: UsuarioCreate) -> Usuario:
+def crear_usuario(db: Session, datos: UsuarioCreate, taller_id: Optional[int] = None) -> Usuario:
     """
     Crea un nuevo usuario con su perfil correspondiente según el rol.
     Todo en una sola transacción.
@@ -51,7 +51,7 @@ def crear_usuario(db: Session, datos: UsuarioCreate) -> Usuario:
         db.add(perfil)
 
     elif datos.rol == RolUsuario.mecanico:
-        perfil = Mecanico(usuario_id=nuevo_usuario.id)
+        perfil = Mecanico(usuario_id=nuevo_usuario.id,taller_id=taller_id)
         db.add(perfil)
 
     elif datos.rol == RolUsuario.administrador:

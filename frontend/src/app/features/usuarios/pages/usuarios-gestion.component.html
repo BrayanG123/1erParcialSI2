@@ -1,0 +1,261 @@
+<div class="space-y-6 min-h-screen bg-[#F1F5F9] -m-4 md:-m-6 p-4 md:p-8 transition-colors duration-300">
+  <!-- Header Card -->
+  <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-[#1C2434]">Gestión de Usuarios</h1>
+        <p class="text-sm text-[#64748B] mt-1">Supervisa y administra todos los perfiles registrados en el sistema.</p>
+      </div>
+      <button 
+        (click)="openModal()"
+        class="bg-[#3C50E0] hover:bg-opacity-90 text-white px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-500/10 w-fit active:scale-95"
+      >
+        <ng-icon name="heroUser" class="text-xl"></ng-icon>
+        + Nuevo Usuario
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="flex flex-col md:flex-row gap-4">
+      <div class="relative flex-1 group">
+        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 group-focus-within:text-[#3C50E0] transition-colors">
+          <ng-icon name="heroMagnifyingGlass"></ng-icon>
+        </span>
+        <input 
+          type="text" 
+          placeholder="Buscar por nombre, email o username..." 
+          [(ngModel)]="searchTerm"
+          (input)="currentPage.set(1)"
+          class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434] placeholder:text-slate-400 shadow-sm"
+        >
+      </div>
+      
+      <div class="w-full md:w-64">
+        <select 
+          [(ngModel)]="selectedRol"
+          (change)="currentPage.set(1)"
+          class="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434] cursor-pointer appearance-none shadow-sm"
+        >
+          <option value="todos">Todos los Roles</option>
+          <option value="superadmin">Superadmin</option>
+          <option value="administrador">Administrador</option>
+          <option value="mecanico">Mecánico</option>
+          <option value="cliente">Cliente</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Section -->
+  <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+    <div class="overflow-x-auto custom-scrollbar">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-slate-50 text-[#1C2434] font-bold border-b border-slate-100">
+          <tr>
+            <th class="px-6 py-4 uppercase tracking-wider">Usuario</th>
+            <th class="px-6 py-4 hidden md:table-cell uppercase tracking-wider">Rol</th>
+            <th class="px-6 py-4 uppercase tracking-wider">Estado</th>
+            <th class="px-6 py-4 text-right uppercase tracking-wider">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          <!-- Loading State -->
+          <tr *ngIf="loading()">
+            <td colspan="4" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="w-8 h-8 border-2 border-[#3C50E0] border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-[#64748B] animate-pulse font-medium">Cargando usuarios...</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data Rows -->
+          <tr *ngFor="let u of paginatedUsuarios()" class="hover:bg-slate-50 transition-colors group">
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-[#1C2434] font-bold group-hover:border-[#3C50E0]/30 transition-colors">
+                  {{ u.nombre.charAt(0) }}{{ u.apellido.charAt(0) }}
+                </div>
+                <div>
+                  <div class="font-bold text-[#1C2434]">{{ u.nombre }} {{ u.apellido }}</div>
+                  <div class="text-xs text-[#64748B]">{{ u.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 hidden md:table-cell">
+              <span [class]="'px-2.5 py-1 rounded-lg text-xs font-bold border ' + getRolBadgeClass(u.rol)">
+                {{ u.rol | uppercase }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-2">
+                <div [class]="'w-2.5 h-2.5 rounded-full ' + (u.is_active ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-slate-300')"></div>
+                <span [class]="u.is_active ? 'text-emerald-600 font-semibold' : 'text-slate-400'">
+                  {{ u.is_active ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center justify-end gap-2">
+                <button 
+                  (click)="onEdit(u)"
+                  title="Editar"
+                  class="p-2 rounded-lg bg-white text-slate-500 hover:bg-[#3C50E0] hover:text-white transition-all border border-slate-200 shadow-sm"
+                >
+                  <ng-icon name="heroPencilSquare"></ng-icon>
+                </button>
+                <button 
+                  (click)="onSuspend(u)"
+                  title="Suspender"
+                  class="p-2 rounded-lg bg-white text-slate-500 hover:bg-orange-500 hover:text-white transition-all border border-slate-200 shadow-sm"
+                >
+                  <ng-icon name="heroPauseCircle"></ng-icon>
+                </button>
+                <button 
+                  (click)="onDelete(u)"
+                  title="Eliminar"
+                  class="p-2 rounded-lg bg-white text-slate-500 hover:bg-red-500 hover:text-white transition-all border border-slate-200 shadow-sm"
+                >
+                  <ng-icon name="heroTrash"></ng-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="!loading() && filteredUsuarios().length === 0">
+            <td colspan="4" class="px-6 py-12 text-center text-[#64748B] font-medium">
+              No se encontraron usuarios registrados.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="bg-slate-50 px-6 py-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-xs text-[#64748B] font-bold uppercase tracking-wider">
+        Mostrando <span class="text-[#1C2434]">{{ (currentPage() - 1) * pageSize() + 1 }}</span> - <span class="text-[#1C2434]">{{ Math.min(currentPage() * pageSize(), filteredUsuarios().length) }}</span> de <span class="text-[#1C2434]">{{ filteredUsuarios().length }}</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button 
+          [disabled]="currentPage() === 1"
+          (click)="currentPage.set(currentPage() - 1)"
+          class="flex items-center gap-1 px-3 py-2 rounded-xl bg-white text-[#1C2434] border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all text-xs font-bold shadow-sm"
+        >
+          <ng-icon name="heroChevronLeft"></ng-icon>
+          Anterior
+        </button>
+        <div class="text-xs font-bold text-[#1C2434] bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+          {{ currentPage() }} / {{ totalPages() || 1 }}
+        </div>
+        <button 
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          (click)="currentPage.set(currentPage() + 1)"
+          class="flex items-center gap-1 px-3 py-2 rounded-xl bg-white text-[#1C2434] border border-slate-200 disabled:opacity-30 hover:bg-slate-50 transition-all text-xs font-bold shadow-sm"
+        >
+          Siguiente
+          <ng-icon name="heroChevronRight"></ng-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registro Usuario -->
+<div *ngIf="showModal()" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-[#1C2434]/40 backdrop-blur-[2px]" (click)="closeModal()"></div>
+  
+  <!-- Modal Content -->
+  <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b border-slate-100">
+      <div>
+        <h2 class="text-xl font-bold text-[#1C2434]">Registrar Nuevo Usuario</h2>
+        <p class="text-xs text-[#64748B] mt-1">Completa los datos para dar de alta un nuevo perfil.</p>
+      </div>
+      <button (click)="closeModal()" class="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors">
+        <ng-icon name="heroXMark" class="text-xl"></ng-icon>
+      </button>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="p-6 space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Nombre</label>
+          <input 
+            type="text" 
+            formControlName="nombre"
+            placeholder="Ej: Juan"
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434]"
+          >
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Apellido</label>
+          <input 
+            type="text" 
+            formControlName="apellido"
+            placeholder="Ej: Pérez"
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434]"
+          >
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Correo Electrónico</label>
+        <input 
+          type="email" 
+          formControlName="email"
+          placeholder="juan@ejemplo.com"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434]"
+        >
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Contraseña</label>
+        <input 
+          type="password" 
+          formControlName="password"
+          placeholder="••••••••"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434]"
+        >
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Rol de Usuario</label>
+        <select 
+          formControlName="rol"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-[#3C50E0] focus:ring-4 focus:ring-blue-500/5 transition-all text-[#1C2434] appearance-none cursor-pointer"
+        >
+          <option value="administrador">Administrador de Taller</option>
+          <option value="mecanico">Mecánico</option>
+          <option value="cliente">Cliente</option>
+        </select>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex items-center gap-3 pt-4">
+        <button 
+          type="button" 
+          (click)="closeModal()"
+          class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="submit"
+          [disabled]="submitting()"
+          class="flex-1 px-4 py-2.5 rounded-xl bg-[#3C50E0] hover:bg-opacity-90 text-white font-bold text-sm shadow-lg shadow-blue-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <div *ngIf="submitting()" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          {{ submitting() ? 'Registrando...' : 'Crear Usuario' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

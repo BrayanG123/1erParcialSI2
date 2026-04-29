@@ -1,0 +1,220 @@
+<div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
+
+  <!-- VISTA 1: LISTADO DE INCIDENTES PARA ASIGNAR -->
+  <div *ngIf="view === 'list'" class="animate-in fade-in duration-500">
+    <div class="mb-8">
+      <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Asignaciones de Servicio</h1>
+      <p class="text-sm text-slate-500 mt-1">Gestiona las asignaciones activas y despacha nuevos incidentes.</p>
+    </div>
+
+    <!-- Pestañas (Simuladas para alternar entre pendientes y activas) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <!-- Columna: Pendientes de Asignar -->
+      <div class="space-y-6">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+          Pendientes de despachar
+        </h3>
+        
+        <div *ngIf="incidentesPendientes.length === 0" class="bg-white p-12 rounded-3xl border border-dashed border-slate-200 text-center">
+          <p class="text-slate-400 text-sm font-medium">No hay incidentes esperando asignación.</p>
+        </div>
+
+        <div *ngFor="let inc of incidentesPendientes" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 group hover:border-indigo-100 transition-all">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <span class="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">#INC-{{ inc.id }}</span>
+              <h4 class="text-base font-bold text-slate-800 mt-2">{{ inc.descripcion }}</h4>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-4 mb-6">
+            <select #mecanicoSelect class="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all">
+              <option value="">Seleccionar técnico disponible...</option>
+              <option *ngFor="let m of mecanicos" [value]="m.id">{{ m.nombre }} {{ m.apellido }}</option>
+            </select>
+            <button (click)="asignarMecanico(inc, mecanicoSelect.value)" 
+              class="bg-[#4F46E5] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-indigo-100 hover:bg-[#4338CA] active:scale-95 transition-all">
+              Asignar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna: Asignaciones Activas -->
+      <div class="space-y-6">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          En seguimiento
+        </h3>
+
+        <div *ngIf="asignacionesActivas.length === 0" class="bg-white p-12 rounded-3xl border border-dashed border-slate-200 text-center">
+          <p class="text-slate-400 text-sm font-medium">No hay servicios en curso actualmente.</p>
+        </div>
+
+        <div *ngFor="let asig of asignacionesActivas" (click)="seleccionarAsignacion(asig)" 
+          class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 cursor-pointer hover:shadow-md transition-all flex items-center justify-between group">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black">
+              #{{ asig.id }}
+            </div>
+            <div>
+              <p class="text-sm font-bold text-slate-800">Servicio para Incidente #{{ asig.incidente_id }}</p>
+              <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">{{ asig.estado }}</span>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-300 group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA 2: PANEL DE SEGUIMIENTO (PANTALLA 4) -->
+  <div *ngIf="view === 'detail' && selectedAsignacion" class="animate-in slide-in-from-right-8 duration-500">
+    
+    <!-- Header de Detalle -->
+    <div class="flex items-center gap-4 mb-10">
+      <button (click)="volver()" class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all shadow-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Seguimiento de Servicio</h1>
+    </div>
+
+    <!-- Grid de Tres Columnas -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      
+      <!-- Columna 1: Información del servicio -->
+      <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Información del servicio</h3>
+        <div class="space-y-6">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">ID de servicio</label>
+            <p class="text-sm font-bold text-slate-800">#SER-2024-{{ selectedAsignacion.id | number:'5.0-0' }}</p>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Solicitud</label>
+            <p class="text-sm font-bold text-indigo-600">#INC-2024-{{ selectedAsignacion.incidente_id | number:'5.0-0' }}</p>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Cliente</label>
+            <p class="text-sm font-bold text-slate-800">Juan Pérez</p>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Ubicación</label>
+            <p class="text-sm font-medium text-slate-600">Av. Siempre Viva 123, Bogotá</p>
+          </div>
+          <button class="w-full py-3 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all">
+            Abrir en mapa
+          </button>
+        </div>
+      </div>
+
+      <!-- Columna 2: Seguimiento y Técnico -->
+      <div class="space-y-8">
+        
+        <!-- Stepper de Estado -->
+        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+          <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-8">Estado del servicio</h3>
+          <div class="relative flex justify-between">
+            <!-- Línea de fondo -->
+            <div class="absolute top-4 left-0 w-full h-0.5 bg-slate-100 z-0"></div>
+            
+            <div *ngFor="let paso of pasos" class="relative z-10 flex flex-col items-center">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500"
+                [ngClass]="{
+                  'bg-emerald-500 text-white': getStepStatus(paso) === 'completed',
+                  'bg-[#4F46E5] text-white ring-4 ring-indigo-100': getStepStatus(paso) === 'current',
+                  'bg-slate-100 text-slate-400': getStepStatus(paso) === 'pending'
+                }">
+                <svg *ngIf="getStepStatus(paso) === 'completed'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                <span *ngIf="getStepStatus(paso) !== 'completed'" class="text-[10px] font-black">{{ pasos.indexOf(paso) + 1 }}</span>
+              </div>
+              <span class="mt-3 text-[10px] font-bold tracking-tight uppercase"
+                [ngClass]="{
+                  'text-emerald-600': getStepStatus(paso) === 'completed',
+                  'text-indigo-600': getStepStatus(paso) === 'current',
+                  'text-slate-400': getStepStatus(paso) === 'pending'
+                }">
+                {{ paso }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Técnico Asignado -->
+        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+          <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Técnico asignado</h3>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden border-2 border-white shadow-sm">
+                <img src="https://ui-avatars.com/api/?name=Carlos+R&background=random" alt="Mecanico">
+              </div>
+              <div>
+                <p class="text-base font-bold text-slate-900">Carlos Rodriguez</p>
+                <div class="flex items-center gap-1 mt-1">
+                  <svg class="w-3.5 h-3.5 text-orange-400 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                  <span class="text-xs font-bold text-slate-500">4.8</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actualización de Estado -->
+        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+          <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Actualización de estado</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 uppercase mb-2">Nuevo estado</label>
+              <select [(ngModel)]="nuevoEstado" class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all appearance-none">
+                <option *ngFor="let p of pasos" [value]="p">{{ p }}</option>
+              </select>
+            </div>
+            <button (click)="actualizarEstado()" 
+              class="w-full bg-[#4F46E5] text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-100 hover:bg-[#4338CA] transition-all active:scale-95">
+              Actualizar estado
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna 3: Información del incidente y Evidencia -->
+      <div class="space-y-8">
+        
+        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+          <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Información del incidente</h3>
+          <div class="space-y-6">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Problema</label>
+              <p class="text-sm font-bold text-slate-800">Falla de batería</p>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Prioridad</label>
+              <span class="inline-flex px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wider mt-1">Alta</span>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Distancia</label>
+              <p class="text-sm font-bold text-slate-800">2.4 km</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+          <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Evidencia principal</h3>
+          <div class="aspect-video rounded-2xl overflow-hidden border border-slate-100 bg-slate-50">
+            <img src="https://images.unsplash.com/photo-1599256621730-535171e28e50?q=80&w=500" alt="Evidencia" class="w-full h-full object-cover">
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>

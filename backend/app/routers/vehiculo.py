@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
+from typing import List
 
-from app.core.dependencies import get_current_cliente
+from app.core.dependencies import get_current_cliente, get_current_superadmin
 from app.crud.vehiculo import (
     crear_vehiculo,
     actualizar_vehiculo,

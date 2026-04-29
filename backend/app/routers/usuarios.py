@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models.usuario import Usuario
+from app.models.usuario import Usuario, Administrador, Mecanico, Cliente
 from app.schemas.usuario import UsuarioRead, UsuarioUpdate, UsuarioConPerfil
 from app.crud.usuario import get_usuario_by_id, actualizar_usuario, desactivar_usuario
 from app.core.dependencies import get_current_usuario, get_current_administrador
@@ -16,8 +16,17 @@ router = APIRouter(
 
 
 @router.get("/me", response_model=UsuarioConPerfil)
-def mi_perfil(usuario: Usuario = Depends(get_current_usuario)):
-    """Retorna el perfil del usuario autenticado."""
+def mi_perfil(
+    usuario_actual: Usuario = Depends(get_current_usuario),
+    db: Session = Depends(get_db)
+):
+    """Retorna el perfil completo del usuario autenticado, incluyendo taller si es admin."""
+    usuario = db.query(Usuario).filter(Usuario.id == usuario_actual.id).options(
+        joinedload(Usuario.perfil_administrador).joinedload(Administrador.taller),
+        joinedload(Usuario.perfil_mecanico).joinedload(Mecanico.taller),
+        joinedload(Usuario.perfil_cliente)
+    ).first()
+    
     return usuario
 
 @router.patch("/me", response_model=UsuarioRead)

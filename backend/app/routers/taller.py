@@ -1,17 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import List
 
 from app.database import get_db
-from app.models.usuario import Usuario
+from app.models.usuario import Usuario, Administrador
 from app.schemas.taller import TallerCreate, TallerUpdate, TallerRead
-from app.crud.taller import (
-    crear_taller,
-    get_taller_por_id,
-    get_taller_de_admin,
-    get_talleres,
-    actualizar_taller,
-    eliminar_taller,
-)
+from app.crud.taller import ( crear_taller, get_taller_por_id, get_taller_de_admin, get_talleres, actualizar_taller, eliminar_taller, get_all_talleres, get_taller_by_admin,)
 from app.core.dependencies import get_current_administrador
 from app.services.bitacora import BitacoraService
 
@@ -20,12 +14,9 @@ router = APIRouter(prefix="/talleres", tags=["Talleres"])
 
 # ── PÚBLICO — listar todos los talleres ──────────────────────────────────────
 @router.get("/", response_model=list[TallerRead])
-def listar_talleres(
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-):
-    return get_talleres(db, skip=skip, limit=limit)
+def listar_talleres_publico( db: Session = Depends(get_db)):
+    """Lista todos los talleres (público o compartido)."""
+    return get_talleres(db)
 
 
 # ── PÚBLICO — ver un taller por ID ───────────────────────────────────────────
@@ -40,13 +31,19 @@ def obtener_taller(taller_id: int, db: Session = Depends(get_db)):
 # ── ADMIN — ver su propio taller ─────────────────────────────────────────────
 @router.get("/mi-taller", response_model=TallerRead)
 def mi_taller(
-    usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
+    admin: Usuario = Depends(get_current_administrador)
 ):
-    admin = usuario.perfil_administrador
-    taller = get_taller_de_admin(db, admin.id)
+    """Retorna el taller asociado al administrador autenticado."""
+    # admin = usuario.perfil_administrador
+    # taller = get_taller_de_admin(db, admin.id)
+    perfil_admin = db.query(Administrador).filter(Administrador.usuario_id == admin.id).first()
+    if not perfil_admin:
+        raise HTTPException(status_code=404, detail="Perfil de administrador no encontrado")
+    
+    taller = get_taller_by_admin(db, perfil_admin.id)
     if not taller:
-        raise HTTPException(status_code=404, detail="Aún no tienes un taller registrado")
+        raise HTTPException(status_code=404, detail="Taller no configurado")
     return taller
 
 

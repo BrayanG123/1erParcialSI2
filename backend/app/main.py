@@ -1,13 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.models import Base
 from app.routers import (
     auth,
     usuarios,
     admin,
+    superadmin,
     incidente,
     categoria,
+    vehiculo,
+    taller,
     asignacion_servicio,
     servicio_realizado,
     pago,
@@ -30,8 +32,8 @@ app = FastAPI(
 # ---- CORS ----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    # allow_origins=["http://localhost:4200"],  # origen de Angular
+    # allow_origins=["*"],
+    allow_origins=["http://localhost:4200"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,8 +44,11 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(usuarios.router)
 app.include_router(admin.router)
+app.include_router(superadmin.router)
 app.include_router(incidente.router)
 app.include_router(categoria.router)
+app.include_router(vehiculo.router)
+app.include_router(taller.router)
 app.include_router(asignacion_servicio.router)
 app.include_router(servicio_realizado.router)
 app.include_router(pago.router)
@@ -64,7 +69,6 @@ def root():
 def health_check():
     return {"estado": "ok"}
 
-# temporal
 # @app.get("/db-test")
 # def test_db(db: Session = Depends(get_db)):
 #     try:

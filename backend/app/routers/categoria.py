@@ -12,21 +12,19 @@ from app.crud.categoria import (
     actualizar_categoria,
     eliminar_categoria,
 )
-from app.core.dependencies import get_current_administrador, get_current_usuario
+from app.core.dependencies import get_current_administrador, get_current_superadmin
 
 
 router = APIRouter(prefix="/categorias", tags=["Categorias"])
 
 
-
-# PÚBLICO — listar todas las categorías
+# PÚBLICO — listar todas las categorías (cualquiera puede verlas)
 @router.get("/", response_model=list[CategoriaRead])
 def listar_categorias(db: Session = Depends(get_db)):
-    """Retorna todas las categorías. No requiere autenticación."""
     return get_todas_las_categorias(db)
 
 
-# PÚBLICO — obtener una categoria por ID
+# PÚBLICO — obtener una categoría por ID
 @router.get("/{categoria_id}", response_model=CategoriaRead)
 def obtener_categoria(categoria_id: int, db: Session = Depends(get_db)):
     categoria = get_categoria_por_id(db, categoria_id)
@@ -35,12 +33,11 @@ def obtener_categoria(categoria_id: int, db: Session = Depends(get_db)):
     return categoria
 
 
-
-# ADMIN — crear categoria
+# SOLO SUPERADMIN — crear categoría
 @router.post("/", response_model=CategoriaRead, status_code=status.HTTP_201_CREATED)
 def crear_nueva_categoria(
     datos: CategoriaCreate,
-    usuario: Usuario = Depends(get_current_administrador),
+    usuario: Usuario = Depends(get_current_superadmin),
     db: Session = Depends(get_db),
 ):
     if get_categoria_por_nombre(db, datos.nombre):
@@ -48,13 +45,12 @@ def crear_nueva_categoria(
     return crear_categoria(db, datos)
 
 
-
-# ADMIN — actualizar categoría
+# SOLO SUPERADMIN — actualizar categoría
 @router.patch("/{categoria_id}", response_model=CategoriaRead)
 def actualizar_una_categoria(
     categoria_id: int,
     datos: CategoriaUpdate,
-    usuario: Usuario = Depends(get_current_administrador),
+    usuario: Usuario = Depends(get_current_superadmin),
     db: Session = Depends(get_db),
 ):
     categoria = get_categoria_por_id(db, categoria_id)
@@ -63,12 +59,11 @@ def actualizar_una_categoria(
     return actualizar_categoria(db, categoria, datos)
 
 
-
-# ADMIN — eliminar categoría
+# SOLO SUPERADMIN — eliminar categoría
 @router.delete("/{categoria_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_una_categoria(
     categoria_id: int,
-    usuario: Usuario = Depends(get_current_administrador),
+    usuario: Usuario = Depends(get_current_superadmin),
     db: Session = Depends(get_db),
 ):
     categoria = get_categoria_por_id(db, categoria_id)

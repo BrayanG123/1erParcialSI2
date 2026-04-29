@@ -30,7 +30,6 @@ def get_current_usuario( token: str = Depends(oauth2_scheme), db: Session = Depe
     try:
         # 1. Decodificar el token
         payload = decodificar_token(token)
-
         # 2. Verificar que sea un access token (no un refresh token)
         if payload.get("type") != "access":
             raise credentials_exception
@@ -57,8 +56,6 @@ def get_current_usuario( token: str = Depends(oauth2_scheme), db: Session = Depe
 
     return usuario
 
-
-
 # FÁBRICA DE DEPENDENCIAS POR ROL(ES)
 def require_roles(*roles: RolUsuario):
     """
@@ -66,10 +63,10 @@ def require_roles(*roles: RolUsuario):
 
     Uso:
         # Un solo rol
-        Depends(require_roles(RolUsuario.admin))
+        Depends(require_roles(RolUsuario.administrador))
 
         # Varios roles (cualquiera de ellos tiene acceso)
-        Depends(require_roles(RolUsuario.cliente, RolUsuario.admin))
+        Depends(require_roles(RolUsuario.cliente, RolUsuario.administrador))
     """
     def dependencia(usuario: Usuario = Depends(get_current_usuario)) -> Usuario:
         if usuario.rol not in roles:
@@ -86,6 +83,7 @@ def require_roles(*roles: RolUsuario):
 get_current_cliente = require_roles(RolUsuario.cliente)
 get_current_mecanico = require_roles(RolUsuario.mecanico)
 get_current_administrador = require_roles(RolUsuario.administrador)
+get_current_superadmin = require_roles(RolUsuario.superadmin)
 
 # combinaciones utiles para este proyecto
 get_cliente_o_admin = require_roles(RolUsuario.cliente, RolUsuario.administrador)

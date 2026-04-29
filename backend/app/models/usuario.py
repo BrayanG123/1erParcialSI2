@@ -7,6 +7,7 @@ from app.models.base import Base
 
 
 class RolUsuario(str, enum.Enum):
+    superadmin = "superadmin" 
     cliente = "cliente"
     mecanico = "mecanico"
     administrador = "administrador"
@@ -72,15 +73,14 @@ class Mecanico(Base):
     asignaciones = relationship("AsignacionServicio", back_populates="mecanico")
 
 
-# Tabla de perfil: administradores
 class Administrador(Base):
     __tablename__ = "administradores"
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), unique=True, nullable=False)
+    taller_id = Column(Integer, ForeignKey("talleres.id", ondelete="SET NULL"), nullable=True)
 
-    # Relacion inversa hacia usuario
     usuario = relationship("Usuario", back_populates="perfil_administrador")
 
-    # Relacion inversa hacia taller
-    taller = relationship("Taller", back_populates="administrador", uselist=False)
+    # ← Agrega foreign_keys para resolver la ambigüedad
+    taller = relationship("Taller", back_populates="administrador", uselist=False, foreign_keys=[taller_id])

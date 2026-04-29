@@ -6,6 +6,7 @@ class VehiculoBase(BaseModel):
     placa: str
     modelo: str
     color: str
+    foto_vehiculo: Optional[str] = None
     tipo_seguro: Optional[str] = None
 
 
