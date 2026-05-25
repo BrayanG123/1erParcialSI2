@@ -1,0 +1,35 @@
+<div class="min-h-screen bg-gray-50 p-6 ">
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-900 ">Bitácora del Sistema</h2>
+    <p class="text-sm text-gray-500 ">Registro de actividad administrativa.</p>
+  </div>
+
+  <div *ngIf="error" class="mb-4 rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700   ">
+    {{ error }}
+  </div>
+
+  <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm  ">
+    <table class="w-full text-left">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500  ">
+        <tr>
+          <th class="px-4 py-3">Fecha</th>
+          <th class="px-4 py-3">Usuario</th>
+          <th class="px-4 py-3">Acción</th>
+          <th class="px-4 py-3">Descripción</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 ">
+        <tr *ngFor="let evento of eventos" class="hover:bg-gray-50 :bg-gray-700/20">
+          <td class="px-4 py-3 text-sm text-gray-700 ">{{ evento.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td class="px-4 py-3 text-sm font-medium text-gray-800 ">{{ getUsuarioNombre(evento) }}</td>
+          <td class="px-4 py-3 text-sm text-brand-600 ">{{ evento.accion || evento.evento || 'N/A' }}</td>
+          <td class="px-4 py-3 text-sm text-gray-600 ">{{ evento.descripcion || 'Sin descripción' }}</td>
+        </tr>
+        <tr *ngIf="!loading && eventos.length === 0">
+          <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-500 ">No hay eventos registrados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+

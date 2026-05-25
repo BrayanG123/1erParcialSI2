@@ -1,0 +1,111 @@
+<div class="min-h-screen flex items-center justify-center bg-[#F1F5F9] px-6 antialiased">
+  <div class="w-full max-w-[720px] bg-white p-6 rounded-2xl shadow-xl shadow-slate-200 border border-slate-100 relative overflow-hidden">
+
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-50 rounded-full opacity-50"></div>
+    <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-50 rounded-full opacity-50"></div>
+
+    <header class="text-center mb-5 space-y-1 relative">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100">
+        <svg class="w-7 h-7 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l5.653-4.655m5.585-5.585-.658-.66a2.25 2.25 0 0 0-3.182 0l-1.56 1.56" />
+        </svg>
+      </div>
+      <h1 class="text-2xl font-black text-[#1C2434] tracking-tight">Configura tu Taller</h1>
+      <p class="text-slate-500 font-medium text-xs">Casi listo, completa la información de tu negocio</p>
+    </header>
+
+    <form [formGroup]="setupForm" (ngSubmit)="onSubmit()" class="space-y-3 relative">
+
+      <!-- Fila 1: Nombre + Teléfono -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1">
+          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nombre del Taller</label>
+          <input formControlName="nombre" type="text"
+            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[#1C2434] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-300 font-medium text-sm"
+            placeholder="Ej. Taller Rayo McQueen">
+        </div>
+        <div class="space-y-1">
+          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Teléfono</label>
+          <input formControlName="telefono" type="text"
+            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[#1C2434] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-300 font-medium text-sm"
+            placeholder="Ej. +591 76543210">
+        </div>
+      </div>
+
+      <!-- Dirección -->
+      <div class="space-y-1">
+        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Dirección</label>
+        <input formControlName="direccion" type="text"
+          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[#1C2434] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-300 font-medium text-sm"
+          placeholder="Ej. Av. Siempre Viva 123">
+      </div>
+
+      <!-- Mapa -->
+      <div class="space-y-1.5">
+        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+          Ubicación del Taller
+        </label>
+
+        <div class="relative w-full rounded-xl overflow-hidden border-2 transition-colors"
+          [class.border-indigo-400]="locationSelected"
+          [class.border-slate-200]="!locationSelected">
+
+          <div id="taller-map"></div>
+
+          <div *ngIf="gpsLoading"
+            class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2"
+            style="z-index: 10;">
+            <svg class="w-6 h-6 text-indigo-400 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            <p class="text-xs text-slate-400 font-medium">Buscando tu ubicación...</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 px-1">
+          <ng-container *ngIf="!locationSelected && !gpsLoading">
+            <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
+            </svg>
+            <p class="text-xs text-slate-400 font-medium">Haz clic en el mapa para marcar la ubicación</p>
+          </ng-container>
+          <ng-container *ngIf="locationSelected">
+            <svg class="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>
+            </svg>
+            <p class="text-xs text-green-600 font-semibold">
+              Ubicación fijada —
+              {{ setupForm.get('latitud')?.value | number:'1.4-4' }},
+              {{ setupForm.get('longitud')?.value | number:'1.4-4' }}
+            </p>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="errorMessage"
+        class="rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-500 text-center">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit"
+        [disabled]="setupForm.invalid || !locationSelected || isSubmitting"
+        class="w-full flex items-center justify-center gap-3 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all cursor-pointer shadow-lg shadow-indigo-100">
+        {{ isSubmitting ? 'Guardando...' : 'Finalizar Configuración' }}
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+        </svg>
+      </button>
+
+      <div class="pt-3 border-t border-slate-100 text-center">
+        <button (click)="logout()" type="button"
+          class="text-slate-400 hover:text-red-500 text-xs font-bold uppercase tracking-widest transition-colors">
+          Cerrar sesión e intentar después
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

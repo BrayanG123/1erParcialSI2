@@ -1,0 +1,89 @@
+<div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
+
+  <!-- Header de Bienvenida -->
+  <div class="flex justify-between items-start mb-8">
+    <div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">¡Bienvenido, Admin!</h1>
+      <p class="text-sm font-bold text-slate-400 mt-1">{{ tallerName }}</p>
+    </div>
+
+    <div class="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3">
+      <span class="text-xs font-bold text-slate-600">
+        Hoy, {{ today | date:'d de MMMM de yyyy' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+      <p class="text-[11px] font-bold text-slate-400 uppercase">Solicitudes nuevas</p>
+      <h2 class="text-3xl font-black">{{ stats.nuevas }}</h2>
+      <a routerLink="/admin/incidentes" class="text-xs font-bold text-indigo-600">Ver detalles</a>
+    </div>
+
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+      <p class="text-[11px] font-bold text-slate-400 uppercase">En proceso</p>
+      <h2 class="text-3xl font-black">{{ stats.enProceso }}</h2>
+      <a routerLink="/admin/asignaciones" class="text-xs font-bold text-indigo-600">Ver detalles</a>
+    </div>
+
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+      <p class="text-[11px] font-bold text-slate-400 uppercase">Completadas hoy</p>
+      <h2 class="text-3xl font-black">{{ stats.completadasHoy }}</h2>
+      <a routerLink="/admin/servicios-realizados" class="text-xs font-bold text-indigo-600">Ver historial</a>
+    </div>
+
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+      <p class="text-[11px] font-bold text-slate-400 uppercase">Tiempo prom. respuesta</p>
+      <h2 class="text-3xl font-black">18 <span class="text-sm">min</span></h2>
+    </div>
+
+  </div>
+
+  <!-- Panel central -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+
+    <!-- Solicitudes -->
+    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+      <h3 class="text-lg font-black mb-6">Solicitudes recientes</h3>
+
+      <div class="space-y-4">
+        <div *ngFor="let req of recentRequests" class="flex justify-between p-4 border rounded-2xl">
+
+          <div>
+            <p class="font-bold text-slate-800">{{ req.descripcion }}</p>
+            <p class="text-xs text-slate-400">Av. Siempre Viva 123</p>
+          </div>
+
+          <span class="text-xs font-bold">{{ req.tiempo }}</span>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- MAPA CORREGIDO -->
+    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+
+      <h3 class="text-lg font-black mb-6">Mapa de incidentes cercanos</h3>
+
+      <div class="aspect-video bg-slate-100 rounded-2xl overflow-hidden relative">
+
+        <!-- <img
+          [src]="'https://api.mapbox.com/styles/v1/mapbox/light-v10/static/-74.07,4.60,13/800x450?access_token=' + mapboxToken"
+          class="w-full h-full object-cover opacity-80 grayscale hover:grayscale-0 transition-all" alt="Mapa" /> -->
+
+        <!-- marcador -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 2C6.13 2 3 5.13 3 9c0 5.25 7 11 7 11s7-5.75 7-11c0-3.87-3.13-7-7-7z" />
+          </svg>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>

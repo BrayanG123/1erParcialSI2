@@ -1,0 +1,129 @@
+<div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
+  
+  <div class="mb-8">
+    <h1 class="text-2xl font-black text-slate-900 tracking-tight">Disponibilidad del taller</h1>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+    
+    <!-- Card 1: Estado General -->
+    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between h-full animate-in fade-in slide-in-from-left-4 duration-500">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Estado general</h3>
+          <p class="text-lg font-black text-slate-800">Taller disponible</p>
+        </div>
+        
+        <!-- Toggle Switch -->
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" [(ngModel)]="tallerDisponible" (change)="toggleDisponibilidad()" class="sr-only peer">
+          <div class="w-14 h-8 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#10B981]"></div>
+        </label>
+      </div>
+
+      <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+        <p class="text-sm font-medium text-slate-600 leading-relaxed">
+          <span *ngIf="tallerDisponible" class="text-emerald-600 font-bold italic">"Tu taller está disponible para recibir nuevas solicitudes."</span>
+          <span *ngIf="!tallerDisponible" class="text-red-500 font-bold italic">"Taller cerrado temporalmente. No se recibirán nuevas solicitudes."</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Card 2: Capacidad Actual -->
+    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 animate-in fade-in slide-in-from-right-4 duration-500">
+      <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Capacidad actual</h3>
+      
+      <div class="space-y-6">
+        <div class="flex justify-between items-center">
+          <span class="text-sm font-bold text-slate-500">Técnicos disponibles</span>
+          <div class="flex items-baseline gap-1">
+            <span class="text-xl font-black text-slate-900">{{ tecnicosDisponibles }}</span>
+            <span class="text-xs font-bold text-slate-400">de {{ tecnicosTotales }}</span>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span class="text-sm font-bold text-slate-500">Servicios activos</span>
+          <span class="text-xl font-black text-slate-900">{{ serviciosActivos }}</span>
+        </div>
+
+        <div class="pt-4 border-t border-slate-50">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-sm font-bold text-slate-500">Capacidad máxima diaria</span>
+            <div class="flex items-baseline gap-1">
+              <span class="text-xl font-black text-slate-900">{{ capacidadMaxima }}</span>
+              <span class="text-xs font-bold text-slate-400">servicios</span>
+            </div>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div class="relative w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+            <div class="h-full bg-[#10B981] transition-all duration-1000" [style.width.%]="getPorcentajeOcupacion()"></div>
+          </div>
+          <p class="text-right text-[11px] font-black text-[#10B981] mt-2 tracking-widest">{{ getPorcentajeOcupacion() }}% OCUPADO</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Técnicos y Disponibilidad -->
+  <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="px-8 py-6 border-b border-slate-50">
+      <h3 class="text-lg font-black text-slate-900 tracking-tight">Técnicos y disponibilidad</h3>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-50/50">
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Técnico</th>
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Estado</th>
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Ubicación actual</th>
+            <th class="px-8 py-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          <tr *ngFor="let t of tecnicosList" class="hover:bg-slate-50/30 transition-colors">
+            <!-- Técnico -->
+            <td class="px-8 py-5">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-[10px]">
+                  {{ t.nombre.substring(0,2).toUpperCase() }}
+                </div>
+                <span class="text-sm font-bold text-slate-800">{{ t.nombre }}</span>
+              </div>
+            </td>
+
+            <!-- Estado -->
+            <td class="px-8 py-5">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                [ngClass]="{
+                  'bg-emerald-50 text-emerald-600': t.estado === 'Disponible',
+                  'bg-orange-50 text-orange-600': t.estado === 'En servicio',
+                  'bg-red-50 text-red-600': t.estado === 'No disponible'
+                }">
+                {{ t.estado }}
+              </span>
+            </td>
+
+            <!-- Ubicación -->
+            <td class="px-8 py-5">
+              <span class="text-sm font-medium text-slate-500">{{ t.ubicacion }}</span>
+            </td>
+
+            <!-- Acciones -->
+            <td class="px-8 py-5">
+              <div class="flex justify-center">
+                <button *ngIf="t.ubicacion !== '-'" (click)="verEnMapa(t)"
+                  class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl hover:bg-indigo-100 transition-all border border-indigo-100">
+                  Ver en mapa
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

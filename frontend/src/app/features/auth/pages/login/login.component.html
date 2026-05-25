@@ -1,0 +1,64 @@
+<div class="min-h-screen flex items-center justify-center bg-[#F1F5F9] px-6 antialiased">
+  <div class="w-full max-w-[420px] bg-white p-10 lg:p-12 rounded-2xl shadow-xl shadow-slate-200 border border-slate-100">
+
+    <header class="text-center mb-10 space-y-4">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 mb-2 border border-indigo-100">
+        <!-- Logo VehiAssist: WrenchScrewdriver -->
+        <svg class="w-10 h-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11.423 5.297a2.25 2.25 0 1 0 1.154 0M10.125 15.111c-.352.028-.703.06-1.053.097m10.125-5.234a47.886 47.886 0 0 0-4.722-.249m0 0a4.5 4.5 0 0 0-4.722-4.456m4.722 4.456l-6.242 7.588m6.242-7.588l1.455-1.77a.75.75 0 0 0-.258-1.222 17.5 17.5 0 0 0-3.32-.821.75.75 0 0 0-.904.757l.115 1.543m1.455-1.77a4.5 4.5 0 0 1 4.722 4.456m-4.722-4.456L8.4 12.062a4.5 4.5 0 1 0 6.242 7.588l6.242-7.588m-6.242 7.588l1.455-1.77a.75.75 0 0 0-.258-1.222 17.5 17.5 0 0 0-3.32-.821.75.75 0 0 0-.904.757l.115 1.543m1.455-1.77a4.5 4.5 0 0 1 4.722 4.456M10.125 15.111l-.115-1.543a.75.75 0 0 0-.757-.694H8.4a.75.75 0 0 0-.75.75v1.49l.115 1.543m1.455-1.77a4.5 4.5 0 0 1 4.722 4.456M10.125 15.111l-1.455 1.77a.75.75 0 0 0 .258 1.222 17.5 17.5 0 0 0 3.32.821.75.75 0 0 0 .904-.757l-.115-1.543" />
+        </svg>
+      </div>
+      <div class="flex flex-col items-center gap-1">
+        <h1 class="text-3xl font-black text-[#1C2434] tracking-tight">VehiAssist</h1>
+        <p class="text-slate-500 font-medium text-sm">Inicia sesión en tu panel</p>
+      </div>
+    </header>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <app-auth-input
+        label="Correo electrónico"
+        placeholder="admin@vehiassist.com"
+        type="email"
+        [control]="$any(loginForm.controls.email)"
+        icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>'
+      ></app-auth-input>
+
+      <app-auth-input
+        label="Contraseña"
+        placeholder="••••••••"
+        type="password"
+        [control]="$any(loginForm.controls.password)"
+        icon='<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>'
+      ></app-auth-input>
+
+      <div class="flex items-center justify-between px-1 text-xs font-bold">
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="remember"
+            class="w-4 h-4 rounded border-slate-200 bg-white text-indigo-600 focus:ring-indigo-500/20 cursor-pointer">
+          <label for="remember" class="text-slate-500 cursor-pointer hover:text-indigo-600 transition-colors">Recordar sesión</label>
+        </div>
+        <a href="#" class="text-indigo-600 hover:text-indigo-700 transition-colors">¿Olvidaste tu clave?</a>
+      </div>
+
+      <app-primary-button
+        type="submit"
+        [disabled]="loginForm.invalid || isSubmitting"
+        [showArrow]="true"
+      >
+        {{ isSubmitting ? 'Verificando...' : 'Entrar al Sistema' }}
+      </app-primary-button>
+
+      <div *ngIf="loginError" class="rounded-xl border border-red-100 bg-red-50 px-4 py-4 text-xs font-bold text-red-500 text-center">
+        {{ loginError }}
+      </div>
+    </form>
+
+    <div class="mt-10 pt-8 border-t border-slate-100 text-center">
+      <p class="text-slate-500 font-bold text-xs uppercase tracking-tight">
+        ¿Nuevo taller?
+        <a routerLink="/register" class="text-indigo-600 hover:text-indigo-700 transition-colors ml-1">Crea una cuenta</a>
+      </p>
+    </div>
+  </div>
+</div>

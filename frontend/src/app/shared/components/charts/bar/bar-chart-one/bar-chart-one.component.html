@@ -1,0 +1,21 @@
+<div class="p-4 bg-white rounded-2xl border border-gray-200  ">
+  <div class="flex items-center justify-between mb-6">
+    <h4 class="text-lg font-bold text-gray-800 ">Ingresos Mensuales</h4>
+    <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">2026</span>
+  </div>
+
+  <div class="flex items-end justify-between gap-2 h-40">
+    <div *ngFor="let value of salesData" 
+         [style.height.%]="(value / 400) * 100" 
+         class="w-full bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-all cursor-pointer group relative">
+      <span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+        ${{value}}
+      </span>
+    </div>
+  </div>
+  
+  <div class="flex justify-between mt-2 text-[10px] text-gray-400 uppercase font-medium">
+    <span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span>
+    <span>Jul</span><span>Ago</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dic</span>
+  </div>
+</div>

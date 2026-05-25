@@ -1,0 +1,140 @@
+<div class="space-y-6 min-h-screen bg-white  -m-4 md:-m-6 p-4 md:p-8 transition-colors duration-300">
+  
+  <!-- Header Card (Avatar) -->
+  <div class="rounded-3xl border border-slate-200  bg-slate-50  overflow-hidden shadow-sm ">
+    <div class="h-32 bg-gradient-to-r from-blue-600 to-indigo-700"></div>
+    <div class="px-6 pb-8">
+      <div class="relative -mt-16 mb-4">
+        <div class="inline-block p-1 rounded-full bg-white  shadow-lg">
+          <img 
+            [src]="perfilForm.get('profile_image_url')?.value || 'https://ui-avatars.com/api/?name=' + usuario()?.nombre + '+' + usuario()?.apellido + '&background=2563eb&color=fff&size=128'" 
+            class="w-32 h-32 rounded-full object-cover border-4 border-slate-50 "
+            alt="Avatar"
+          >
+          <button class="absolute bottom-1 right-1 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all">
+            <ng-icon name="heroCamera" class="text-lg"></ng-icon>
+          </button>
+        </div>
+      </div>
+      <div>
+        <h1 class="text-2xl font-extrabold text-slate-900 ">
+          {{ usuario()?.nombre }} {{ usuario()?.apellido }}
+        </h1>
+        <p class="text-slate-500  font-medium flex items-center gap-2 mt-1 uppercase tracking-widest text-xs">
+          <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600  border border-blue-500/20">
+            {{ usuario()?.rol }}
+          </span>
+          • Super Administrador
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Details Form Card -->
+  <div class="rounded-3xl border border-slate-200  bg-slate-50  p-6 md:p-8 shadow-sm ">
+    <div class="flex items-center gap-3 mb-8 border-b border-slate-200  pb-4">
+      <div class="p-2 bg-blue-600 rounded-xl text-white">
+        <ng-icon name="heroUserCircle" class="text-2xl"></ng-icon>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold text-slate-900 ">Datos Personales</h2>
+        <p class="text-sm text-slate-500 ">Actualiza tu información básica y de contacto.</p>
+      </div>
+    </div>
+
+    <form [formGroup]="perfilForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Nombre -->
+        <div class="space-y-2">
+          <label class="text-xs font-bold text-slate-700  uppercase tracking-widest ml-1">Nombre</label>
+          <div class="relative group">
+            <span class="absolute inset-y-0 left-4 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors">
+              <ng-icon name="heroIdentification"></ng-icon>
+            </span>
+            <input 
+              type="text" 
+              formControlName="nombre"
+              class="w-full bg-white  border border-slate-200  rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-900  shadow-sm"
+            >
+          </div>
+        </div>
+
+        <!-- Apellido -->
+        <div class="space-y-2">
+          <label class="text-xs font-bold text-slate-700  uppercase tracking-widest ml-1">Apellido</label>
+          <div class="relative group">
+            <span class="absolute inset-y-0 left-4 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors">
+              <ng-icon name="heroIdentification"></ng-icon>
+            </span>
+            <input 
+              type="text" 
+              formControlName="apellido"
+              class="w-full bg-white  border border-slate-200  rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-900  shadow-sm"
+            >
+          </div>
+        </div>
+
+        <!-- Email (Read Only maybe?) -->
+        <div class="space-y-2 opacity-70">
+          <label class="text-xs font-bold text-slate-700  uppercase tracking-widest ml-1">Correo Electrónico (No editable)</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-4 flex items-center text-slate-400">
+              <ng-icon name="heroEnvelope"></ng-icon>
+            </span>
+            <input 
+              type="text" 
+              [value]="usuario()?.email" 
+              readonly
+              class="w-full bg-slate-100  border border-slate-200  rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-500 cursor-not-allowed"
+            >
+          </div>
+        </div>
+
+        <!-- Teléfono -->
+        <div class="space-y-2">
+          <label class="text-xs font-bold text-slate-700  uppercase tracking-widest ml-1">Teléfono</label>
+          <div class="relative group">
+            <span class="absolute inset-y-0 left-4 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors">
+              <ng-icon name="heroPhone"></ng-icon>
+            </span>
+            <input 
+              type="text" 
+              formControlName="telefono"
+              placeholder="+591 70000000"
+              class="w-full bg-white  border border-slate-200  rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-900  shadow-sm"
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Image URL -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-slate-700  uppercase tracking-widest ml-1">URL de Imagen de Perfil</label>
+        <div class="relative group">
+          <span class="absolute inset-y-0 left-4 flex items-center text-slate-400 group-focus-within:text-blue-500 transition-colors">
+            <ng-icon name="heroCamera"></ng-icon>
+          </span>
+          <input 
+            type="text" 
+            formControlName="profile_image_url"
+            placeholder="https://ejemplo.com/mi-foto.jpg"
+            class="w-full bg-white  border border-slate-200  rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-900  shadow-sm"
+          >
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="flex justify-end pt-4 border-t border-slate-200 ">
+        <button 
+          type="submit"
+          [disabled]="submitting() || loading()"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 active:scale-95 disabled:opacity-50"
+        >
+          <div *ngIf="submitting()" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          {{ submitting() ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

@@ -1,0 +1,37 @@
+<div class="min-h-screen bg-gray-50 p-6 ">
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold text-gray-900 ">Comisiones</h2>
+    <p class="text-sm text-gray-500 ">Listado de comisiones calculadas.</p>
+  </div>
+
+  <div *ngIf="error" class="mb-4 rounded-xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700   ">
+    {{ error }}
+  </div>
+
+  <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm  ">
+    <table class="w-full text-left">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500  ">
+        <tr>
+          <th class="px-4 py-3">ID</th>
+          <th class="px-4 py-3">Servicio</th>
+          <th class="px-4 py-3">Porcentaje</th>
+          <th class="px-4 py-3">Monto</th>
+          <th class="px-4 py-3">Fecha Emisión</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 ">
+        <tr *ngFor="let item of comisiones" class="hover:bg-gray-50 :bg-gray-700/20">
+          <td class="px-4 py-3 text-sm text-gray-700 ">#{{ item.id }}</td>
+          <td class="px-4 py-3 text-sm text-gray-700 ">#{{ item.servicio_id }}</td>
+          <td class="px-4 py-3 text-sm text-gray-700 ">{{ item.porcentaje || 0 }}%</td>
+          <td class="px-4 py-3 text-sm font-semibold text-success-700 ">{{ item.monto || 0 }} Bs</td>
+          <td class="px-4 py-3 text-sm text-gray-600 ">{{ item.fecha_emision | date:'dd/MM/yyyy HH:mm' }}</td>
+        </tr>
+        <tr *ngIf="!loading && comisiones.length === 0">
+          <td colspan="5" class="px-4 py-6 text-center text-sm text-gray-500 ">No hay comisiones registradas.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+

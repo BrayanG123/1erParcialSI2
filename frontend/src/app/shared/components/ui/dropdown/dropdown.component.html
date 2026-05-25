@@ -1,0 +1,10 @@
+@if (isOpen) {
+<div
+  #dropdownRef
+  [ngClass]="'absolute z-40 right-0 mt-2 rounded-xl border border-gray-200 bg-white shadow-theme-lg   ' + className"
+>
+  <ng-content></ng-content>
+</div>
+}
+
+
