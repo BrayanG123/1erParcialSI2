@@ -7,7 +7,7 @@ class Taller(Base):
     __tablename__ = "talleres"
 
     id = Column(Integer, primary_key=True, index=True)
-    administrador_id = Column(Integer, ForeignKey("administradores.id", ondelete="SET NULL"), nullable=True)
+
     nombre = Column(String(200), nullable=False)
     direccion = Column(String(500), nullable=False)
     latitud = Column(Float, nullable=True)
@@ -16,8 +16,8 @@ class Taller(Base):
     calificacion_promedio = Column(Float, default=0.0, nullable=True)
     is_active = Column(Boolean, default=True)
 
-    # realcion de uno a uno taller----administrador
-    administrador = relationship("Administrador", back_populates="taller", foreign_keys="Administrador.taller_id")
+    # relacion de uno a uno taller----administrador
+    administrador = relationship("Administrador", back_populates="taller", foreign_keys="Administrador.taller_id", uselist=False)
 
     # relacion uno a muchos taller-----mecanico
     mecanicos = relationship("Mecanico", back_populates="taller")

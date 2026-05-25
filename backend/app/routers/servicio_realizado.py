@@ -107,31 +107,8 @@ def mi_servicio_de_asignacion(
     return servicio
 
 
-# ── CLIENTE — ver el servicio de su propia asignación ────────────────────────
-@router.get("/mi-asignacion/{asignacion_id}", response_model=ServicioRealizadoRead)
-def mi_servicio_de_asignacion(
-    asignacion_id: int,
-    usuario: Usuario = Depends(get_current_cliente),
-    db: Session = Depends(get_db),
-):
-    """El cliente consulta el servicio realizado en su asignación."""
-    from app.crud.asignacion_servicio import get_asignacion_por_id
-    asignacion = get_asignacion_por_id(db, asignacion_id)
-    if not asignacion:
-        raise HTTPException(status_code=404, detail="Asignación no encontrada")
 
-    # Verificar que el incidente de esa asignación pertenece al cliente
-    incidente = asignacion.incidente
-    if incidente.cliente.usuario_id != usuario.id:
-        raise HTTPException(status_code=403, detail="No autorizado")
-
-    servicio = get_servicio_por_asignacion(db, asignacion_id)
-    if not servicio:
-        raise HTTPException(status_code=404, detail="Aún no hay servicio registrado")
-    return servicio
-
-
-# ── ADMIN — ver servicio de una asignación específica de SU taller ────────────
+# ── ADMIN — ver servicio de una asignación específica ────────────────────────
 @router.get("/asignacion/{asignacion_id}", response_model=ServicioRealizadoRead)
 def servicio_de_asignacion(
     asignacion_id: int,

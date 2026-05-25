@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '../../../../../environments/environment.development';
 import { AuthInputComponent } from '../../../../shared/components/form/input/auth-input.component';
 import { PrimaryButtonComponent } from '../../../../shared/components/ui/button/primary-button.component';
 

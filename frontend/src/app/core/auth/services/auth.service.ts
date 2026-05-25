@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap, switchMap, of, Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../environments/environment.development';
 import { AuthResponse, LoginCredentials } from '../models/auth.model';
 import { RolUsuario } from '../../../features/usuarios/models/usuario.model';
 import { RoleService } from './role.service';

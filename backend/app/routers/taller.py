@@ -60,7 +60,7 @@ def crear_mi_taller(
     if existente:
         raise HTTPException(status_code=400, detail="Ya tienes un taller registrado")
 
-    taller = crear_taller(db, datos, administrador_id=admin.id)
+    taller = crear_taller(db, admin.id, datos)
 
     BitacoraService.registrar(
         db=db,
@@ -84,7 +84,7 @@ def actualizar_mi_taller(
         raise HTTPException(status_code=404, detail="Taller no encontrado")
 
     admin = usuario.perfil_administrador
-    if taller.administrador_id != admin.id:
+    if admin.taller_id != taller.id:
         raise HTTPException(status_code=403, detail="Este taller no es tuyo")
 
     taller = actualizar_taller(db, taller, datos)
@@ -110,7 +110,7 @@ def eliminar_mi_taller(
         raise HTTPException(status_code=404, detail="Taller no encontrado")
 
     admin = usuario.perfil_administrador
-    if taller.administrador_id != admin.id:
+    if admin.taller_id != taller.id:
         raise HTTPException(status_code=403, detail="Este taller no es tuyo")
 
     eliminar_taller(db, taller)

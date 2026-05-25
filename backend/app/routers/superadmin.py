@@ -57,11 +57,9 @@ def listar_talleres(db: Session = Depends(get_db)):
     for t in talleres:
         admin_id = None
         admin_usuario_id = None
-        if t.administrador_id:
-            admin = db.query(Administrador).filter(Administrador.id == t.administrador_id).first()
-            if admin:
-                admin_id = admin.id
-                admin_usuario_id = admin.usuario_id
+        if t.administrador:
+            admin_id = t.administrador.id
+            admin_usuario_id = t.administrador.usuario_id
 
         data.append(
             {

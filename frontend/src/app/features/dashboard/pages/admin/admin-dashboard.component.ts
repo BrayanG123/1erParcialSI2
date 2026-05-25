@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 
 import { AdminOpsService } from '../../../../core/services/admin-ops.service';
 import { IncidenteService } from '../../../../core/services/incidente.service';
-import { environment } from '../../../../../environments/environment';
+import { environment } from '../../../../../environments/environment.development';
 
 interface Request {
   descripcion: string;
@@ -25,7 +25,7 @@ export class AdminDashboardComponent implements OnInit {
   private incidenteService = inject(IncidenteService);
 
 
-  mapboxToken = environment.mapboxToken;
+  // mapboxToken = environment.mapboxToken;
 
   loading = false;
 

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../../../environments/environment.development';
 import { Categoria_Item, Categoria_Create_Request } from '../models/categoria.model';
 
 @Injectable({ providedIn: 'root' })
