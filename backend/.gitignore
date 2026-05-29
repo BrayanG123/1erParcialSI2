@@ -61,3 +61,4 @@ docker-compose.override.yml
 # mis archivos
 curso_fastapi
 diagramaxml
+contexto

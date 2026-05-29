@@ -47,10 +47,10 @@ def registrar_servicio(
     if asignacion.mecanico_id != mecanico.id:
         raise HTTPException(status_code=403, detail="Esta asignación no es tuya")
 
-    if asignacion.estado != EstadoAsignacion.en_servicio:
+    if asignacion.estado != EstadoAsignacion.en_atencion:
         raise HTTPException(
             status_code=400,
-            detail=f"Solo puedes registrar el servicio cuando estás 'en_servicio'. "
+            detail=f"Solo puedes registrar el servicio cuando estás 'en_atencion'. "
                    f"Estado actual: '{asignacion.estado.value}'"
         )
 
@@ -61,7 +61,7 @@ def registrar_servicio(
     servicio = crear_servicio_realizado(db, asignacion_id, datos)
 
     actualizar_estado_asignacion(
-        db, asignacion, AsignacionEstadoUpdate(estado=EstadoAsignacion.completada)
+        db, asignacion, AsignacionEstadoUpdate(estado=EstadoAsignacion.finalizado)
     )
 
     BitacoraService.registrar(

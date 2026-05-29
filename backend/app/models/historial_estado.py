@@ -18,8 +18,15 @@ class HistorialEstado(Base):
     asignacion_id = Column(
         Integer,
         ForeignKey("asignaciones_servicio.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+    )
+    # NUEVO: permite registrar estados del incidente antes de que haya asignación
+    incidente_id = Column(
+        Integer,
+        ForeignKey("incidentes.id", ondelete="CASCADE"),
+        nullable=True,
     )
 
     # --- Relación ---
     asignacion = relationship("AsignacionServicio", back_populates="historial")
+    incidente  = relationship("Incidente", back_populates="historial_estados")

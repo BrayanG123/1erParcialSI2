@@ -40,17 +40,19 @@ class Cliente(Base):
     __tablename__ = "clientes"
 
     id = Column(Integer, primary_key=True, index=True)
-    usuario_id = Column(Integer, 
-                       ForeignKey("usuarios.id", ondelete="CASCADE"), 
-                       unique=True, 
-                       nullable=False
-                       )
+    usuario_id = Column(
+        Integer, 
+        ForeignKey("usuarios.id", ondelete="CASCADE"), 
+        unique=True, 
+        nullable=False
+    )
     foto_perfil = Column(String(500), nullable=True)
 
     # relacion inversa hacia Usuario
     usuario = relationship("Usuario", back_populates="perfil_cliente")
     vehiculos = relationship("Vehiculo", back_populates="cliente")
     incidentes = relationship("Incidente", back_populates="cliente")
+
 
 # tabla perfil: mecanicos
 class Mecanico(Base):
@@ -67,9 +69,18 @@ class Mecanico(Base):
     foto_vehiculo = Column(String(500), nullable=True)
     tipo_seguro = Column(String(100), nullable=True)
 
+    # FK hacia tenants ---
+    tenant_id = Column(
+        Integer,
+        ForeignKey("tenants.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     # Relacion inversa hacia Usuario
     usuario = relationship("Usuario", back_populates="perfil_mecanico")
     taller = relationship("Taller", back_populates="mecanicos")
+    tenant = relationship("Tenant",  back_populates="mecanicos")
     asignaciones = relationship("AsignacionServicio", back_populates="mecanico")
 
 
@@ -80,7 +91,21 @@ class Administrador(Base):
     usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), unique=True, nullable=False)
     taller_id = Column(Integer, ForeignKey("talleres.id", ondelete="SET NULL"), nullable=True)
 
+    # FK hacia tenants ---
+    tenant_id = Column(
+        Integer,
+        ForeignKey("tenants.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     usuario = relationship("Usuario", back_populates="perfil_administrador")
 
     # ← Agrega foreign_keys para resolver la ambigüedad
-    taller = relationship("Taller", back_populates="administrador", uselist=False, foreign_keys=[taller_id])
+    taller = relationship(
+        "Taller", 
+        back_populates="administrador", 
+        uselist=False, 
+        foreign_keys=[taller_id]
+    )
+    tenant  = relationship("Tenant", back_populates="administradores")

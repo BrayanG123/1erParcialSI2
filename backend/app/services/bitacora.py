@@ -10,12 +10,14 @@ class BitacoraService:
         descripcion: str = None,
         usuario_id: int = None,
         ip_address: str = None,
+        entidad_afectada: str = None,
     ) -> Bitacora:
         entrada = Bitacora(
             accion=accion,
             descripcion=descripcion,
             usuario_id=usuario_id,
             ip_address=ip_address,
+            entidad_afectada=entidad_afectada,
         )
         db.add(entrada)
         db.commit()

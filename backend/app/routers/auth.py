@@ -72,8 +72,21 @@ def login(
 
     rol_valor = usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)
 
+    # 3. Determinar el tenant_id según el perfil del usuario
+    tenant_id = None
+
+    if usuario.rol.value == "administrador" and usuario.perfil_administrador:
+        tenant_id = usuario.perfil_administrador.tenant_id
+
+    elif usuario.rol.value == "mecanico" and usuario.perfil_mecanico:
+        tenant_id = usuario.perfil_mecanico.tenant_id
+
     # 4. Generar Tokens
-    token_data = {"sub": str(usuario.id), "rol": rol_valor}
+    token_data = {
+        "sub": str(usuario.id), 
+        "rol": rol_valor,
+        "tenant_id": tenant_id, 
+    }
     
     BitacoraService.registrar(
         db=db,

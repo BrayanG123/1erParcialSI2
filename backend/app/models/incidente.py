@@ -35,3 +35,8 @@ class Incidente(Base):
     asignacion = relationship("AsignacionServicio", back_populates="incidente", uselist=False)
     evidencias = relationship("Evidencia", back_populates="incidente")
     procesamientos_ia = relationship("ProcesamientoIA", back_populates="incidente")
+    historial_estados = relationship(
+        "HistorialEstado", 
+        back_populates="incidente", 
+        order_by="HistorialEstado.fecha_cambio"
+    )

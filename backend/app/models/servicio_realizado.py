@@ -24,9 +24,17 @@ class ServicioRealizado(Base):
         nullable=False
     )
 
+    # ---  FK hacia tenants ---
+    tenant_id = Column(
+        Integer,
+        ForeignKey("tenants.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     # --- Relaciones ---
     asignacion = relationship("AsignacionServicio", back_populates="servicio_realizado")
+    tenant = relationship("Tenant",             back_populates="servicios")
     pago       = relationship("Pago",     back_populates="servicio", uselist=False)
     comision   = relationship("Comision", back_populates="servicio", uselist=False)
     calificacion = relationship("Calificacion",  back_populates="servicio", uselist=False)

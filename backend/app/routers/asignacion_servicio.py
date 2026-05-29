@@ -42,7 +42,7 @@ def crear_nueva_asignacion(
     existente = get_asignacion_por_incidente(db, datos.incidente_id)
     if existente and existente.estado not in (
         EstadoAsignacion.rechazada,
-        EstadoAsignacion.cancelada,
+        EstadoAsignacion.cancelado,
     ):
         raise HTTPException(
             status_code=400,
@@ -75,6 +75,7 @@ def crear_nueva_asignacion(
         usuario_id=usuario.id,
         accion="CREAR_ASIGNACION",
         descripcion=f"Asignación #{asignacion.id} creada para incidente #{datos.incidente_id}",
+        entidad_afectada="asignacion",
     )
     return asignacion
 
@@ -137,6 +138,55 @@ def rechazar_mi_asignacion(
     return rechazar_asignacion(db, asignacion, datos.motivo_rechazo)
 
 
+# ADMIN — aceptar una asignación (pasar de pendiente → taller_asignado)
+@router.patch("/{asignacion_id}/aceptar", response_model=AsignacionRead)
+def aceptar_mi_asignacion(
+    asignacion_id: int,
+    usuario: Usuario = Depends(get_current_administrador),
+    db: Session = Depends(get_db),
+):
+    """
+    El administrador acepta una asignación pendiente.
+    Cambia el estado de 'pendiente' a 'taller_asignado'.
+    A partir de aquí el mecánico puede avanzar su estado.
+    """
+    taller_id = usuario.perfil_administrador.taller_id
+
+    asignacion = (
+        db.query(AsignacionServicio)
+        .join(AsignacionServicio.mecanico)
+        .filter(
+            AsignacionServicio.id == asignacion_id,
+            Mecanico.taller_id == taller_id,
+        )
+        .first()
+    )
+    if not asignacion:
+        raise HTTPException(
+            status_code=404,
+            detail="Asignación no encontrada o no pertenece a tu taller"
+        )
+
+    if asignacion.estado != EstadoAsignacion.pendiente:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Solo puedes aceptar asignaciones en estado 'pendiente'. "
+                   f"Estado actual: '{asignacion.estado.value}'"
+        )
+
+    resultado = aceptar_asignacion(db, asignacion)
+
+    BitacoraService.registrar(
+        db=db,
+        usuario_id=usuario.id,
+        accion="ACEPTAR_ASIGNACION",
+        descripcion=f"Asignación #{asignacion_id} aceptada por admin taller #{taller_id}",
+        entidad_afectada="asignacion",
+    )
+
+    return resultado
+
+
 # MECÁNICO — avanzar estado de su asignación
 @router.patch("/{asignacion_id}/estado", response_model=AsignacionRead)
 def cambiar_estado_asignacion(
@@ -154,9 +204,9 @@ def cambiar_estado_asignacion(
         raise HTTPException(status_code=403, detail="Esta asignación no es tuya")
 
     transiciones_validas = {
-        EstadoAsignacion.aceptada:    [EstadoAsignacion.en_camino,   EstadoAsignacion.cancelada],
-        EstadoAsignacion.en_camino:   [EstadoAsignacion.en_servicio, EstadoAsignacion.cancelada],
-        EstadoAsignacion.en_servicio: [EstadoAsignacion.completada],
+        EstadoAsignacion.taller_asignado: [EstadoAsignacion.en_camino,   EstadoAsignacion.cancelado],
+        EstadoAsignacion.en_camino:       [EstadoAsignacion.en_atencion, EstadoAsignacion.cancelado],
+        EstadoAsignacion.en_atencion:     [EstadoAsignacion.finalizado],
     }
 
     estados_permitidos = transiciones_validas.get(asignacion.estado, [])

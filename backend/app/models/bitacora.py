@@ -16,6 +16,7 @@ class Bitacora(Base):
     accion = Column(String(100), nullable=False)
     descripcion = Column(Text, nullable=True)
     ip_address = Column(String(45), nullable=True)
+    entidad_afectada = Column(String(50), nullable=True)
     fecha = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     usuario = relationship("Usuario", foreign_keys=[usuario_id])
