@@ -1,89 +1,284 @@
-<div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
+<div class="p-6 bg-[#F8FAFC] min-h-screen font-sans">
 
-  <!-- Header de Bienvenida -->
-  <div class="flex justify-between items-start mb-8">
+  <!-- ── HEADER ──────────────────────────────────────────── -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
-      <h1 class="text-2xl font-black text-slate-900 tracking-tight">¡Bienvenido, Admin!</h1>
-      <p class="text-sm font-bold text-slate-400 mt-1">{{ tallerName }}</p>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">Dashboard KPIs</h1>
+      <p class="text-sm text-slate-400 mt-1">Datos reales del sistema — actualiza al aplicar filtros</p>
     </div>
-
-    <div class="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 flex items-center gap-3">
-      <span class="text-xs font-bold text-slate-600">
-        Hoy, {{ today | date:'d de MMMM de yyyy' }}
-      </span>
-    </div>
+    <span class="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full">
+      {{ today | date:'d MMM yyyy, HH:mm' }}
+    </span>
   </div>
 
-  <!-- KPIs -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-      <p class="text-[11px] font-bold text-slate-400 uppercase">Solicitudes nuevas</p>
-      <h2 class="text-3xl font-black">{{ stats.nuevas }}</h2>
-      <a routerLink="/admin/incidentes" class="text-xs font-bold text-indigo-600">Ver detalles</a>
+  <!-- ── FILTROS ──────────────────────────────────────────── -->
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6 flex flex-wrap items-end gap-4">
+    <div class="flex flex-col gap-1">
+      <label class="text-xs font-bold text-slate-500 uppercase">Desde</label>
+      <input type="date" [(ngModel)]="fechaDesde"
+             class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
     </div>
-
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-      <p class="text-[11px] font-bold text-slate-400 uppercase">En proceso</p>
-      <h2 class="text-3xl font-black">{{ stats.enProceso }}</h2>
-      <a routerLink="/admin/asignaciones" class="text-xs font-bold text-indigo-600">Ver detalles</a>
+    <div class="flex flex-col gap-1">
+      <label class="text-xs font-bold text-slate-500 uppercase">Hasta</label>
+      <input type="date" [(ngModel)]="fechaHasta"
+             class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
     </div>
-
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-      <p class="text-[11px] font-bold text-slate-400 uppercase">Completadas hoy</p>
-      <h2 class="text-3xl font-black">{{ stats.completadasHoy }}</h2>
-      <a routerLink="/admin/servicios-realizados" class="text-xs font-bold text-indigo-600">Ver historial</a>
+    <div class="flex flex-col gap-1">
+      <label class="text-xs font-bold text-slate-500 uppercase">Agrupar por</label>
+      <select [(ngModel)]="agrupacion"
+              class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <option value="dia">Día</option>
+        <option value="semana">Semana</option>
+        <option value="mes">Mes</option>
+      </select>
     </div>
-
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-      <p class="text-[11px] font-bold text-slate-400 uppercase">Tiempo prom. respuesta</p>
-      <h2 class="text-3xl font-black">18 <span class="text-sm">min</span></h2>
-    </div>
-
+    <button (click)="aplicarFiltros()"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-5 py-2 rounded-xl transition-colors">
+      Aplicar filtros
+    </button>
+    <button (click)="fechaDesde=''; fechaHasta=''; aplicarFiltros()"
+            class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold px-5 py-2 rounded-xl transition-colors">
+      Limpiar
+    </button>
   </div>
 
-  <!-- Panel central -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+  <!-- ── LOADING / ERROR ──────────────────────────────────── -->
+  @if (loading) {
+    <div class="flex items-center justify-center h-64">
+      <div class="text-center">
+        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p class="text-slate-500 text-sm font-medium">Cargando KPIs...</p>
+      </div>
+    </div>
+  }
 
-    <!-- Solicitudes -->
-    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-      <h3 class="text-lg font-black mb-6">Solicitudes recientes</h3>
+  @if (error && !loading) {
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-5 mb-6">
+      <p class="font-bold">Error al cargar los datos</p>
+      <p class="text-sm mt-1">Verifica que el servidor FastAPI está activo y que tu sesión tiene un tenant asignado.</p>
+      <button (click)="cargarTodo()" class="mt-3 text-sm font-bold text-red-600 underline">Reintentar</button>
+    </div>
+  }
 
-      <div class="space-y-4">
-        <div *ngFor="let req of recentRequests" class="flex justify-between p-4 border rounded-2xl">
+  @if (!loading && !error) {
 
-          <div>
-            <p class="font-bold text-slate-800">{{ req.descripcion }}</p>
-            <p class="text-xs text-slate-400">Av. Siempre Viva 123</p>
+    <!-- ── TARJETAS KPI ──────────────────────────────────── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+      <!-- Completadas -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Completadas</p>
+        <h2 class="text-3xl font-black text-slate-900 mt-1">{{ resumen?.completadas ?? 0 }}</h2>
+        <p class="text-xs text-slate-400 mt-1">de {{ resumen?.total_asignaciones ?? 0 }} totales</p>
+        <a routerLink="/admin/asignaciones" class="text-xs font-bold text-blue-600 mt-2 block">Ver →</a>
+      </div>
+
+      <!-- Ingresos -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Ingresos totales</p>
+        <h2 class="text-3xl font-black text-slate-900 mt-1">
+          Bs {{ resumen?.ingresos_totales | number:'1.0-0' }}
+        </h2>
+        <p class="text-xs text-slate-400 mt-1">Comisiones: Bs {{ resumen?.comisiones_generadas | number:'1.0-0' }}</p>
+        <a routerLink="/admin/pagos" class="text-xs font-bold text-blue-600 mt-2 block">Ver pagos →</a>
+      </div>
+
+      <!-- Calificación promedio -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Calificación</p>
+        <h2 class="text-3xl font-black text-slate-900 mt-1">
+          @if (resumen?.calificacion_promedio) {
+            ★ {{ resumen!.calificacion_promedio | number:'1.1-1' }}
+          } @else {
+            <span class="text-slate-300">—</span>
+          }
+        </h2>
+        <p class="text-xs text-slate-400 mt-1">Promedio de todos los servicios</p>
+      </div>
+
+      <!-- Pendientes sin atender -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Sin atender</p>
+        <h2 class="text-3xl font-black text-amber-500 mt-1">{{ resumen?.disponibles_sin_atender ?? 0 }}</h2>
+        <p class="text-xs text-slate-400 mt-1">Incidentes disponibles</p>
+        <a routerLink="/admin/incidentes" class="text-xs font-bold text-blue-600 mt-2 block">Atender →</a>
+      </div>
+
+    </div>
+
+    <!-- ── TIEMPOS + SLA ─────────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+      <!-- Tiempos promedio -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <h3 class="text-sm font-black text-slate-800 mb-4">Tiempos promedio del servicio</h3>
+        @if (tiempos?.total_servicios_medidos === 0 || !tiempos) {
+          <p class="text-slate-400 text-sm">No hay datos suficientes para este período.</p>
+        } @else {
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-slate-600">Asignación</span>
+              <span class="font-black text-slate-900">{{ tiempos?.tiempo_asignacion_min ?? '—' }} min</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-1.5">
+              <div class="bg-blue-400 h-1.5 rounded-full"
+                   [style.width.%]="calcularBarra(tiempos?.tiempo_asignacion_min)"></div>
+            </div>
+
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-slate-600">Llegada al cliente</span>
+              <span class="font-black text-slate-900">{{ tiempos?.tiempo_llegada_min ?? '—' }} min</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-1.5">
+              <div class="bg-amber-400 h-1.5 rounded-full"
+                   [style.width.%]="calcularBarra(tiempos?.tiempo_llegada_min)"></div>
+            </div>
+
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-slate-600">Servicio realizado</span>
+              <span class="font-black text-slate-900">{{ tiempos?.tiempo_servicio_min ?? '—' }} min</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-1.5">
+              <div class="bg-green-400 h-1.5 rounded-full"
+                   [style.width.%]="calcularBarra(tiempos?.tiempo_servicio_min)"></div>
+            </div>
+
+            <p class="text-xs text-slate-400 pt-2">
+              Basado en {{ tiempos?.total_servicios_medidos }} servicios con historial completo.
+            </p>
           </div>
-
-          <span class="text-xs font-bold">{{ req.tiempo }}</span>
-
-        </div>
+        }
       </div>
+
+      <!-- SLA -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <h3 class="text-sm font-black text-slate-800 mb-1">Cumplimiento SLA (3 horas)</h3>
+        <p class="text-xs text-slate-400 mb-4">% de servicios completados dentro de 3 horas</p>
+        @if (!sla || sla.total_completados === 0) {
+          <p class="text-slate-400 text-sm">No hay datos de SLA para este período.</p>
+        } @else {
+          <div class="flex items-center gap-4 mb-4">
+            <span class="text-5xl font-black" [class.text-green-600]="sla.porcentaje_sla >= 80"
+                  [class.text-yellow-500]="sla.porcentaje_sla >= 50 && sla.porcentaje_sla < 80"
+                  [class.text-red-500]="sla.porcentaje_sla < 50">
+              {{ sla.porcentaje_sla }}%
+            </span>
+            <div class="text-sm text-slate-500">
+              <p>✅ Dentro del SLA: <strong>{{ sla.dentro_sla }}</strong></p>
+              <p>❌ Fuera del SLA: <strong>{{ sla.fuera_sla }}</strong></p>
+              <p>📦 Total: <strong>{{ sla.total_completados }}</strong></p>
+            </div>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+            <div [class]="slaColor + ' h-4 rounded-full transition-all duration-700'"
+                 [style.width.%]="sla.porcentaje_sla"></div>
+          </div>
+        }
+      </div>
+
     </div>
 
-    <!-- MAPA CORREGIDO -->
-    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+    <!-- ── GRÁFICOS ──────────────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
-      <h3 class="text-lg font-black mb-6">Mapa de incidentes cercanos</h3>
-
-      <div class="aspect-video bg-slate-100 rounded-2xl overflow-hidden relative">
-
-        <!-- <img
-          [src]="'https://api.mapbox.com/styles/v1/mapbox/light-v10/static/-74.07,4.60,13/800x450?access_token=' + mapboxToken"
-          class="w-full h-full object-cover opacity-80 grayscale hover:grayscale-0 transition-all" alt="Mapa" /> -->
-
-        <!-- marcador -->
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 2C6.13 2 3 5.13 3 9c0 5.25 7 11 7 11s7-5.75 7-11c0-3.87-3.13-7-7-7z" />
-          </svg>
-        </div>
-
+      <!-- Gráfico de barras: por tipo -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <h3 class="text-sm font-black text-slate-800 mb-4">Incidentes por tipo</h3>
+        @if (porTipo.length === 0) {
+          <p class="text-slate-400 text-sm">Sin datos para este período.</p>
+        } @else {
+          <div class="relative h-64">
+            <canvas #canvasTipos></canvas>
+          </div>
+        }
       </div>
+
+      <!-- Gráfico de línea: por fecha -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-sm font-black text-slate-800">Tendencia temporal</h3>
+          <div class="flex gap-1 text-xs">
+            @for (op of ['dia', 'semana', 'mes']; track op) {
+              <button (click)="agrupacion = $any(op); aplicarFiltros()"
+                      [class.bg-blue-600]="agrupacion === op"
+                      [class.text-white]="agrupacion === op"
+                      [class.bg-slate-100]="agrupacion !== op"
+                      [class.text-slate-600]="agrupacion !== op"
+                      class="px-2 py-1 rounded-lg font-bold capitalize transition-colors">
+                {{ op }}
+              </button>
+            }
+          </div>
+        </div>
+        @if (porFecha.length === 0) {
+          <p class="text-slate-400 text-sm">Sin datos para este período.</p>
+        } @else {
+          <div class="relative h-64">
+            <canvas #canvasFechas></canvas>
+          </div>
+        }
+      </div>
+
     </div>
 
-  </div>
+    <!-- ── TABLA: RANKING DE TALLERES ───────────────────── -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
+      <h3 class="text-sm font-black text-slate-800 mb-4">Ranking de talleres</h3>
+      @if (talleres.length === 0) {
+        <p class="text-slate-400 text-sm">No hay talleres con datos en este período.</p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-100">
+                <th class="text-left py-2 px-3 text-xs font-bold text-slate-400 uppercase">#</th>
+                <th class="text-left py-2 px-3 text-xs font-bold text-slate-400 uppercase">Taller</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-slate-400 uppercase">Completados</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-slate-400 uppercase">Cancelados</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-slate-400 uppercase">Calificación</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-slate-400 uppercase">Ingresos</th>
+                <th class="text-right py-2 px-3 text-xs font-bold text-slate-400 uppercase">T. respuesta</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (taller of talleres; track taller.taller_id; let i = $index) {
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                  <td class="py-3 px-3 font-black text-slate-400">{{ i + 1 }}</td>
+                  <td class="py-3 px-3 font-semibold text-slate-800">{{ taller.taller }}</td>
+                  <td class="py-3 px-3 text-right">
+                    <span class="font-bold text-green-700">{{ taller.servicios_completados }}</span>
+                  </td>
+                  <td class="py-3 px-3 text-right">
+                    <span class="font-bold text-red-500">{{ taller.servicios_cancelados }}</span>
+                  </td>
+                  <td class="py-3 px-3 text-right font-bold text-amber-600">
+                    @if (taller.calificacion_promedio) {
+                      ★ {{ taller.calificacion_promedio | number:'1.1-1' }}
+                    } @else { — }
+                  </td>
+                  <td class="py-3 px-3 text-right font-bold text-slate-700">
+                    Bs {{ taller.ingresos_totales | number:'1.0-0' }}
+                  </td>
+                  <td class="py-3 px-3 text-right text-slate-500">
+                    @if (taller.tiempo_respuesta_min) {
+                      {{ taller.tiempo_respuesta_min | number:'1.0-0' }} min
+                    } @else { — }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- ── MAPA: ZONAS CON MÁS INCIDENTES ───────────────── -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <h3 class="text-sm font-black text-slate-800 mb-1">Mapa de zonas de incidentes</h3>
+      <p class="text-xs text-slate-400 mb-4">Círculos más grandes = más incidentes en esa zona</p>
+      <div #contenedorMapa class="w-full rounded-xl overflow-hidden" style="height: 400px;"></div>
+    </div>
+
+  } <!-- fin @if !loading && !error -->
 
 </div>
