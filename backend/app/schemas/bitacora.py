@@ -9,6 +9,7 @@ class BitacoraRead(BaseModel):
     accion: str
     descripcion: Optional[str] = None
     ip_address: Optional[str] = None
+    entidad_afectada: Optional[str] = None
     fecha: datetime
 
     model_config = { "from_attributes": True }

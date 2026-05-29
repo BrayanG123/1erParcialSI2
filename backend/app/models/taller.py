@@ -16,6 +16,16 @@ class Taller(Base):
     calificacion_promedio = Column(Float, default=0.0, nullable=True)
     is_active = Column(Boolean, default=True)
 
+    # FK hacia tenants ---
+    tenant_id = Column(
+        Integer,
+        ForeignKey("tenants.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,     # índice para filtrar rápido por tenant
+    )
+
+    # --- Relaciones ---
+    tenant = relationship("Tenant", back_populates="talleres")
     # relacion de uno a uno taller----administrador
     administrador = relationship("Administrador", back_populates="taller", foreign_keys="Administrador.taller_id", uselist=False)
 

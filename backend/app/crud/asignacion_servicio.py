@@ -44,7 +44,7 @@ def get_asignaciones_de_mecanico(db: Session, mecanico_id: int) -> list[Asignaci
 
 
 def aceptar_asignacion(db: Session, asignacion: AsignacionServicio) -> AsignacionServicio:
-    asignacion.estado = EstadoAsignacion.aceptada
+    asignacion.estado = EstadoAsignacion.taller_asignado
     asignacion.fecha_respuesta = datetime.utcnow()
     db.commit()
     db.refresh(asignacion)
