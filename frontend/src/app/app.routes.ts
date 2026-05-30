@@ -119,6 +119,10 @@ export const routes: Routes = [
       {
         path: 'disponibilidad',
         loadComponent: () => import('./features/admin/pages/disponibilidad/disponibilidad.component').then(m => m.DisponibilidadComponent)
+      },
+      {
+        path: 'seguimiento',
+        loadComponent: () => import('./features/admin/pages/seguimiento/seguimiento.component').then(m => m.SeguimientoComponent)
       }
     ]
   },
