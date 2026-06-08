@@ -27,6 +27,8 @@ from app.core.dependencies import (
 )
 from app.services.bitacora import BitacoraService
 from app.models.incidente import EstadoIncidente
+from app.services.websocket_manager import manager
+
 
 
 router = APIRouter(prefix="/asignaciones", tags=["Asignaciones de Servicio"])
@@ -189,7 +191,7 @@ def aceptar_mi_asignacion(
 
 # MECÁNICO — avanzar estado de su asignación
 @router.patch("/{asignacion_id}/estado", response_model=AsignacionRead)
-def cambiar_estado_asignacion(
+async def cambiar_estado_asignacion(
     asignacion_id: int,
     datos: AsignacionEstadoUpdate,
     usuario: Usuario = Depends(get_current_mecanico),
@@ -217,7 +219,36 @@ def cambiar_estado_asignacion(
             detail=f"Desde '{asignacion.estado.value}' solo puedes ir a: {permitidos_str}"
         )
 
-    return actualizar_estado_asignacion(db, asignacion, datos)
+    asignacion_actualizada = actualizar_estado_asignacion(db, asignacion, datos)
+
+    # --- notificar por WebSocket a todos los conectados al incidente ---
+    # Construir datos del mecánico para enviar al cliente
+    mecanico_datos = None
+    if asignacion.mecanico:
+        mecanico_datos = {
+            "id": asignacion.mecanico.id,
+            "nombre": asignacion.mecanico.usuario.nombre if asignacion.mecanico.usuario else "Mecánico",
+            "telefono": asignacion.mecanico.telefono,
+            "lat": asignacion.mecanico.latitud,
+            "lng": asignacion.mecanico.longitud,
+        }
+
+    await manager.broadcast(
+        incidente_id=asignacion.incidente_id,
+        mensaje={
+            "tipo": "cambio_estado",
+            "estado": datos.estado.value,
+            "asignacion_id": asignacion.id,
+            "incidente_id": asignacion.incidente_id,
+            "mecanico": mecanico_datos,
+        }
+    )
+
+    # Limpiar posición del mecánico de memoria si el servicio terminó
+    if datos.estado in (EstadoAsignacion.finalizado, EstadoAsignacion.cancelado):
+        manager.limpiar_posicion(asignacion.incidente_id)
+
+    return asignacion_actualizada
 
 
 # COMPARTIDO — obtener una asignación por ID

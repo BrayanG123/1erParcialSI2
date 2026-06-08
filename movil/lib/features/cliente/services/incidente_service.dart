@@ -39,7 +39,7 @@ class IncidenteService {
   /// Obtiene los incidentes del cliente autenticado.
   Future<List<Incidente>> obtenerMisIncidentes() async {
     try {
-      final response = await _dio.get(ApiConstants.incidentes);
+      final response = await _dio.get('${ApiConstants.incidentes}/mis-incidentes');
       final lista = response.data as List<dynamic>;
       return lista
           .map((json) => Incidente.fromJson(json as Map<String, dynamic>))

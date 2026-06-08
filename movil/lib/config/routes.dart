@@ -14,6 +14,8 @@ import 'package:movil/models/vehiculo.dart';
 import 'package:movil/features/cliente/screens/detalle_incidente_screen.dart';
 import 'package:movil/features/perfil/screens/perfil_screen.dart';
 
+import 'package:movil/features/cliente/screens/tracking_incidente_screen.dart';
+
 
 class AppRoutes {
   static const splash        = 'splash';
@@ -31,7 +33,7 @@ class AppRoutes {
   static const editarVehiculo  = 'editar-vehiculo';
   static const String detalleIncidente = 'detalle-incidente';
   static const perfil = 'perfil';
-
+  static const trackingIncidente = 'tracking-incidente';
 
 }
 
@@ -122,10 +124,20 @@ final appRouter = GoRouter(
     ),
 
     GoRoute(
+      path: '/cliente/incidente/:id/tracking',
+      name: AppRoutes.trackingIncidente,
+      builder: (context, state) {
+        final id = int.parse(state.pathParameters['id']!);
+        return TrackingIncidenteScreen(incidenteId: id);
+      },
+    ),
+
+    GoRoute(
       path: '/perfil',
       name: AppRoutes.perfil,
       builder: (context, state) => const PerfilScreen(),
     ),
+    
   ],
 
   

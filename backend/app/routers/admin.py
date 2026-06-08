@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.usuario import Usuario, Mecanico
-from app.schemas.usuario import UsuarioRead, UsuarioCreate
+from app.schemas.usuario import UsuarioRead, UsuarioCreate, UsuarioConPerfil
 from app.crud.usuario import desactivar_usuario, crear_usuario
 from app.core.dependencies import get_current_administrador
 from app.services.bitacora import BitacoraService
@@ -35,7 +35,7 @@ def ver_bitacora(
         db, usuario_ids=usuarios_del_taller, skip=skip, limit=limit
     )
 
-@router.get("/usuarios", response_model=list[UsuarioRead])
+@router.get("/usuarios", response_model=list[UsuarioConPerfil])
 def listar_mecanicos_del_taller(
     skip: int = 0,
     limit: int = 100,

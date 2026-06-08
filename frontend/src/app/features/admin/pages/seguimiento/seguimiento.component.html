@@ -1,51 +1,157 @@
-<div class="grid min-h-screen grid-cols-1 gap-6 bg-gray-50 p-6  lg:grid-cols-5">
-  <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm   lg:col-span-2">
-    <h2 class="mb-1 text-xl font-bold text-gray-900 ">Seguimiento en Vivo</h2>
-    <p class="mb-4 text-sm text-gray-500 ">Asignaciones activas en estado En Proceso.</p>
+<!-- ─────────────────────────────────────────────────────────────────────────
+  seguimiento.component.html
 
-    <div class="space-y-2">
+  Layout: dos columnas
+  - Izquierda (2/5): lista de asignaciones activas
+  - Derecha  (3/5): mapa Leaflet + badge de estado
+───────────────────────────────────────────────────────────────────────────── -->
+
+<div class="grid min-h-screen grid-cols-1 gap-6 bg-gray-50 p-6 lg:grid-cols-5">
+
+  <!-- ═══════════════════════════════════════════════
+    PANEL IZQUIERDO — Lista de asignaciones activas
+  ═══════════════════════════════════════════════ -->
+  <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:col-span-2">
+
+    <div class="mb-4 flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">Seguimiento en Vivo</h2>
+        <p class="text-sm text-gray-500">Asignaciones en camino o en atención.</p>
+      </div>
       <button
-        *ngFor="let asignacion of asignaciones_en_proceso"
-        (click)="seleccionarServicio(asignacion)"
-        class="w-full rounded-xl border px-4 py-3 text-left transition"
-        [ngClass]="asignacion_activa?.id === asignacion.id ? 'border-brand-500 bg-brand-50 ' : 'border-gray-200 hover:bg-gray-50  :bg-gray-700/40'"
+        (click)="cargarAsignaciones()"
+        class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 transition"
       >
-        <p class="text-sm font-semibold text-gray-900 ">Servicio #{{ asignacion.id }}</p>
-        <p class="text-xs text-gray-500 ">
-          Incidente: {{ asignacion.incidente_id || asignacion.incidente?.id || 'N/A' }} | Mecánico:
-          {{ asignacion.mecanico_id || asignacion.mecanico?.id || 'N/A' }}
-        </p>
+        Actualizar
       </button>
-
-      <p *ngIf="!loading_asignaciones && asignaciones_en_proceso.length === 0" class="text-sm text-gray-500 ">
-        No hay servicios en proceso en este momento.
-      </p>
     </div>
-  </section>
 
-  <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm   lg:col-span-3">
-    <h3 class="mb-4 text-lg font-semibold text-gray-900 ">Evidencias Multimedia</h3>
-    <p *ngIf="error" class="mb-3 rounded-lg bg-error-50 px-3 py-2 text-sm text-error-700  ">
+    <!-- Estado de carga -->
+    <div *ngIf="loading_asignaciones" class="py-8 text-center text-sm text-gray-400">
+      Cargando...
+    </div>
+
+    <!-- Error -->
+    <p *ngIf="error && !asignacion_activa"
+       class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
       {{ error }}
     </p>
 
-    <div *ngIf="!asignacion_activa" class="rounded-xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500  ">
-      Selecciona un servicio activo para ver las fotos subidas por el mecánico.
+    <!-- Sin asignaciones activas -->
+    <p *ngIf="!loading_asignaciones && asignaciones.length === 0"
+       class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+      No hay servicios activos en este momento.
+    </p>
+
+    <!-- Lista de asignaciones -->
+    <div class="space-y-2">
+      <button
+        *ngFor="let asignacion of asignaciones"
+        (click)="seleccionarAsignacion(asignacion)"
+        class="w-full rounded-xl border px-4 py-3 text-left transition"
+        [ngClass]="asignacion_activa?.id === asignacion.id
+          ? 'border-blue-500 bg-blue-50'
+          : 'border-gray-200 hover:bg-gray-50'"
+      >
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-gray-900">Asignación #{{ asignacion.id }}</p>
+          <span
+            class="rounded-full px-2 py-0.5 text-xs font-medium"
+            [ngClass]="getColorEstado(asignacion.estado)"
+          >
+            {{ getEtiquetaEstado(asignacion.estado) }}
+          </span>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">
+          Incidente: #{{ asignacion.incidente_id ?? asignacion.incidente?.id ?? 'N/A' }}
+          &nbsp;|&nbsp;
+          Mecánico: #{{ asignacion.mecanico_id ?? asignacion.mecanico?.id ?? 'N/A' }}
+        </p>
+      </button>
     </div>
 
-    <div *ngIf="asignacion_activa && !loading_evidencias" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div *ngFor="let evidencia of evidencias" class="overflow-hidden rounded-xl border border-gray-200 ">
-        <img
-          [src]="getEvidenciaUrl(evidencia)"
-          [alt]="evidencia.descripcion || 'Evidencia del servicio'"
-          class="h-52 w-full object-cover"
-        />
-        <p class="px-3 py-2 text-xs text-gray-600 ">{{ evidencia.descripcion || 'Evidencia sin descripción' }}</p>
-      </div>
-      <p *ngIf="evidencias.length === 0" class="col-span-full text-sm text-gray-500 ">
-        Este servicio no tiene evidencias disponibles.
-      </p>
-    </div>
   </section>
-</div>
 
+  <!-- ═══════════════════════════════════════════════
+    PANEL DERECHO — Mapa + estado en tiempo real
+  ═══════════════════════════════════════════════ -->
+  <section class="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:col-span-3">
+
+    <!-- Sin asignación seleccionada -->
+    <div
+      *ngIf="!asignacion_activa"
+      class="flex flex-1 items-center justify-center rounded-xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500"
+    >
+      Selecciona una asignación activa para ver el seguimiento en tiempo real.
+    </div>
+
+    <!-- Con asignación seleccionada -->
+    <ng-container *ngIf="asignacion_activa">
+
+      <!-- Header: info de la asignación + estado en tiempo real -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="text-base font-bold text-gray-900">
+            Asignación #{{ asignacion_activa.id }}
+            &nbsp;—&nbsp;
+            Incidente #{{ asignacion_activa.incidente_id ?? asignacion_activa.incidente?.id }}
+          </h3>
+          <p class="text-xs text-gray-500">
+            Mecánico #{{ asignacion_activa.mecanico_id ?? asignacion_activa.mecanico?.id }}
+          </p>
+        </div>
+
+        <!-- Badge de estado (se actualiza en tiempo real) -->
+        <span
+          class="rounded-full px-3 py-1 text-sm font-semibold transition-all"
+          [ngClass]="getColorEstado(estado_actual)"
+        >
+          {{ getEtiquetaEstado(estado_actual) }}
+        </span>
+      </div>
+
+      <!-- Indicador de conexión WebSocket -->
+      <div class="flex items-center gap-2 text-xs text-gray-500">
+        <span
+          class="inline-block h-2 w-2 rounded-full"
+          [ngClass]="getColorWS()"
+        ></span>
+        WebSocket: {{ ws_estado }}
+      </div>
+
+      <!-- Badge de estado finalizado/cancelado -->
+      <div
+        *ngIf="estado_actual === 'finalizado'"
+        class="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800"
+      >
+        ✅ El servicio ha finalizado. La conexión WebSocket se cerró automáticamente.
+      </div>
+      <div
+        *ngIf="estado_actual === 'cancelado'"
+        class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800"
+      >
+        ❌ El servicio fue cancelado.
+      </div>
+
+      <!-- Mapa Leaflet -->
+      <!--
+        IMPORTANTE: el id "mapa-seguimiento" es el que usa L.map() en el componente.
+        La altura debe estar definida explícitamente (h-96 = 24rem = 384px).
+        Sin altura fija, Leaflet muestra el mapa con altura 0.
+      -->
+      <div
+        id="mapa-seguimiento"
+        class="h-96 w-full rounded-xl border border-gray-200 overflow-hidden"
+      ></div>
+
+      <!-- Leyenda del mapa -->
+      <p class="text-center text-xs text-gray-400">
+        📍 El marcador azul muestra la posición en tiempo real del mecánico.
+        Se actualiza automáticamente al recibir nuevas coordenadas GPS.
+      </p>
+
+    </ng-container>
+
+  </section>
+
+</div>

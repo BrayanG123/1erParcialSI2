@@ -16,6 +16,7 @@ from app.models.asignacion_servicio import AsignacionServicio
 from app.models.usuario import Mecanico
 from app.crud.incidente import (
     crear_incidente,
+    get_incidente_por_id,
     get_incidentes_de_cliente,
     get_incidentes_disponibles,
     actualizar_incidente,
