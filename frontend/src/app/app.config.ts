@@ -1,21 +1,29 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/interceptors/auth.interceptor';
+import { provideServiceWorker } from '@angular/service-worker';
+
 
 export const appConfig: ApplicationConfig = {
   providers: [
     // Optimización de detección de cambios (estándar en Angular 18/19)
-    provideZoneChangeDetection({ eventCoalescing: true }), 
-    
+    provideZoneChangeDetection({ eventCoalescing: true }),
+
     // Configuración de las rutas que definimos antes
-    provideRouter(routes), 
-    
+    provideRouter(routes),
+
     // Configuración del cliente HTTP con tu interceptor de seguridad
     provideHttpClient(
       withInterceptors([authInterceptor])
-    )
+    ),
+
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000'
+    })
+
   ]
 };
