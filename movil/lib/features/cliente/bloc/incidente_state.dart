@@ -60,3 +60,15 @@ class IncidenteError extends IncidenteState {
   @override
   List<Object?> get props => [mensaje];
 }
+
+
+/// El incidente se guarda localmente porque no había conexión.
+/// Se enviará automáticamente cuando haya internet.
+class IncidenteGuardadoOffline extends IncidenteState {
+  final int totalPendientes;
+
+  const IncidenteGuardadoOffline({required this.totalPendientes});
+
+  @override
+  List<Object?> get props => [totalPendientes];
+}

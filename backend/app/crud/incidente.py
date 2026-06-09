@@ -58,3 +58,9 @@ def marcar_no_disponible(db: Session, incidente: Incidente) -> Incidente:
     db.refresh(incidente)
     return incidente
 
+# def cancelar_incidente(db: Session, incidente: Incidente) -> Incidente:
+#     """Llamado cuando el cliente cancela su propio incidente."""
+#     incidente.estado = EstadoIncidente.cancelado
+#     db.commit()
+#     db.refresh(incidente)
+#     return incidente

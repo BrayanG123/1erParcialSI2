@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "420503241824",
+    "project_id": "auxilio-vehicular",
+    "storage_bucket": "auxilio-vehicular.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420503241824:android:4348411e6bdb4685cb2f05",
+        "android_client_info": {
+          "package_name": "com.example.movil"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrGUUcbSuzCEeP99UmbHuwTNPLpsljs-s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

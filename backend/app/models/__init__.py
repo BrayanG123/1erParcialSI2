@@ -14,3 +14,5 @@ from app.models.calificacion import Calificacion
 from app.models.evidencia import Evidencia
 from app.models.historial_estado import HistorialEstado
 from app.models.procesamiento_ia import ProcesamientoIA, EstadoProcesamiento
+from app.models.notificacion import Notificacion
+from app.models.web_push_subscription import WebPushSubscription 

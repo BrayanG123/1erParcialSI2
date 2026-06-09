@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
+    # Firebase Cloud Messaging
+    FIREBASE_CREDENTIALS_PATH: str = "firebase_credentials.json"
+
+    # Web Push (VAPID)
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_CLAIM_EMAIL: str = "admin@auxilio-vehicular.com"
+
     # indicar a pydantic donde esta el .env
     model_config = SettingsConfigDict(
         env_file=Path(__file__).parent.parent / ".env",
