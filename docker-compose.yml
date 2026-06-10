@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: auxilio_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: auxilio_vehicular
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: auxilio_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:admin@db:5432/auxilio_vehicular
+      - SECRET_KEY=bd653c50d498bdbf3ad00afe480f6ee5321aea77cf0068f93460918f7cce6672
+      - DEBUG=True
+      - AZURE_SPEECH_KEY=
+      - AZURE_SPEECH_REGION=southcentralus
+      - AZURE_SPEECH_LANGUAGE=es-ES
+      - GEMINI_API_KEY=
+      - GEMINI_MODEL=gemini-1.5-flash
+      - GROQ_API_KEY=
+      - GROQ_MODEL=llama-3.3-70b-versatile
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
