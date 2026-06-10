@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.taller import Taller
 from app.models.usuario import Administrador
@@ -21,7 +22,7 @@ def get_talleres(db: Session, skip: int = 0, limit: int = 100) -> list[Taller]:
     return db.query(Taller).offset(skip).limit(limit).all()
 
 
-def crear_taller(db: Session, admin_id: int, datos: TallerCreate):
+def crear_taller(db: Session, admin_id: int, datos: TallerCreate, tenant_id: Optional[int] = None):
     # 1. Crear el taller
     nuevo_taller = Taller(
         nombre=datos.nombre,
@@ -29,6 +30,7 @@ def crear_taller(db: Session, admin_id: int, datos: TallerCreate):
         telefono=datos.telefono,
         latitud=datos.latitud,
         longitud=datos.longitud,
+        tenant_id=tenant_id,
     )
     db.add(nuevo_taller)
     db.flush() # Para obtener el ID del taller sin hacer commit
@@ -37,6 +39,8 @@ def crear_taller(db: Session, admin_id: int, datos: TallerCreate):
     admin = db.query(Administrador).filter(Administrador.id == admin_id).first()
     if admin:
         admin.taller_id = nuevo_taller.id
+        if tenant_id:
+            admin.tenant_id = tenant_id
     
     db.commit()
     db.refresh(nuevo_taller)

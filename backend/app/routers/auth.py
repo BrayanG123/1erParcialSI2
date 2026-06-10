@@ -129,13 +129,25 @@ def setup_taller(
         db.add(perfil_admin)
         db.flush()
 
+    # Si el admin no tiene tenant, creamos uno nuevo automáticamente para él (Onboarding SaaS)
+    if not perfil_admin.tenant_id:
+        from app.models.tenant import Tenant, PlanTenant
+        nuevo_tenant = Tenant(
+            nombre=f"Organizacion {datos.nombre}",
+            plan=PlanTenant.basico,
+            activo=True
+        )
+        db.add(nuevo_tenant)
+        db.flush()
+        perfil_admin.tenant_id = nuevo_tenant.id
+
     # 2) Evitar duplicados
     existente = get_taller_by_admin(db, perfil_admin.id)
     if existente:
         return {"message": "El taller ya estaba configurado", "taller_id": existente.id}
 
     # 3) Crear taller
-    nuevo_taller = crear_taller(db, perfil_admin.id, datos)
+    nuevo_taller = crear_taller(db, perfil_admin.id, datos, tenant_id=perfil_admin.tenant_id)
     return {"message": "Taller configurado exitosamente", "taller_id": nuevo_taller.id}
 
 
