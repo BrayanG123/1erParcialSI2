@@ -12,7 +12,7 @@ class AsignacionService {
   /// Devuelve todas las asignaciones del mecánico autenticado.
   Future<List<AsignacionServicio>> obtenerMisAsignaciones() async {
     try {
-      final response = await _dio.get(ApiConstants.asignaciones);
+      final response = await _dio.get('${ApiConstants.asignaciones}/mis-asignaciones');
       final lista = response.data as List<dynamic>;
       return lista
           .map((json) => AsignacionServicio.fromJson(json as Map<String, dynamic>))

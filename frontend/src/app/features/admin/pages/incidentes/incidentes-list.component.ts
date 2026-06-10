@@ -6,6 +6,9 @@ import { MecanicoService } from '../../../../core/services/mecanico.service';
 import { AsignacionService } from '../../../../core/services/asignacion.service';
 import { AsignacionRequest } from '../../../../core/models/asignacion.model';
 
+import { WebPushService } from '../../../../core/services/web-push.service';
+
+
 @Component({
   selector: 'app-incidentes-list',
   standalone: true,
@@ -16,6 +19,11 @@ export class IncidentesListComponent implements OnInit {
   private incidenteService = inject(IncidenteService);
   private mecanicoService = inject(MecanicoService);
   private asignacionService = inject(AsignacionService);
+  private webPushService = inject(WebPushService);
+
+
+  // Estado del banner de notificaciones
+  mostrarBannerNotif = !this.webPushService.yaSuscrito && this.webPushService.estaDisponible;
 
   // Pestañas
   tabActiva: 'pendientes' | 'historial' = 'pendientes';
@@ -41,6 +49,19 @@ export class IncidentesListComponent implements OnInit {
 
   cambiarTab(tab: 'pendientes' | 'historial') {
     this.tabActiva = tab;
+  }
+
+  activarNotificaciones(): void {
+    this.webPushService.suscribir().subscribe({
+      complete: () => {
+        this.mostrarBannerNotif = false;
+      }
+    });
+  }
+
+  rechazarNotificaciones(): void {
+    this.mostrarBannerNotif = false;
+    localStorage.setItem('webpush_suscrito', 'rechazado');
   }
 
   cargarDatos() {
@@ -108,7 +129,7 @@ export class IncidentesListComponent implements OnInit {
   private determinarPrioridad(inc: any): 'Alta' | 'Media' | 'Baja' {
     const desc = (inc.descripcion || '').toLowerCase();
     const cat = (inc.categoria?.nombre || '').toLowerCase();
-    
+
     if (desc.includes('choque') || desc.includes('accidente') || desc.includes('fuego') || cat.includes('emergencia')) {
       return 'Alta';
     }
@@ -129,15 +150,15 @@ export class IncidentesListComponent implements OnInit {
 
   getFilteredIncidentes() {
     return this.incidentesPendientes.filter(inc => {
-      const matchSearch = !this.searchTerm || 
+      const matchSearch = !this.searchTerm ||
         inc.descripcion.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         inc.id.toString().includes(this.searchTerm);
-      
+
       const matchPrioridad = !this.filtroPrioridad || inc.prioridad === this.filtroPrioridad;
-      
+
       const distanciaNum = parseFloat(inc.distancia);
       const matchDistancia = this.filtroDistancia === '50' || distanciaNum <= parseInt(this.filtroDistancia);
-      
+
       return matchSearch && matchPrioridad && matchDistancia;
     });
   }

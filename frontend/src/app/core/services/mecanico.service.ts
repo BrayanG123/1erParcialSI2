@@ -15,7 +15,7 @@ export class MecanicoService {
     map(usuarios => usuarios
       .filter(u => u.rol === 'mecanico')
       .map(u => ({
-        id: u.perfil_mecanico_id ?? u.id, // ← necesitas que el backend devuelva esto
+        id: u.perfil_mecanico?.id ?? u.id,
         nombre: u.nombre,
         apellido: u.apellido
       }))

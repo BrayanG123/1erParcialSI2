@@ -27,6 +27,9 @@ from app.core.dependencies import (
 )
 from app.services.bitacora import BitacoraService
 from app.models.incidente import EstadoIncidente
+from app.services.websocket_manager import manager
+from app.services.notificacion_service import notificar_cliente_cambio_estado
+
 
 
 router = APIRouter(prefix="/asignaciones", tags=["Asignaciones de Servicio"])
@@ -135,7 +138,25 @@ def rechazar_mi_asignacion(
             detail=f"No puedes rechazar una asignación en estado '{asignacion.estado.value}'"
         )
 
-    return rechazar_asignacion(db, asignacion, datos.motivo_rechazo)
+    resultado = rechazar_asignacion(db, asignacion, datos.motivo_rechazo)
+
+    # ── Notificar al cliente: taller rechazó ─────────────────────────────
+    try:
+        incidente = get_incidente_por_id(db, asignacion.incidente_id)
+        if incidente and incidente.cliente:
+            notificar_cliente_cambio_estado(
+                db=db,
+                cliente_usuario_id=incidente.cliente.usuario_id,
+                incidente_id=incidente.id,
+                mensaje="El taller rechazó tu incidente. Buscaremos otro.",
+                tipo="estado_asignacion",
+            )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error enviando push al cliente: {e}")
+    # ─────────────────────────────────────────────────────────────────────
+
+    return resultado
 
 
 # ADMIN — aceptar una asignación (pasar de pendiente → taller_asignado)
@@ -176,6 +197,22 @@ def aceptar_mi_asignacion(
 
     resultado = aceptar_asignacion(db, asignacion)
 
+    # ── Notificar al cliente: taller aceptó ──────────────────────────────
+    try:
+        incidente = get_incidente_por_id(db, asignacion.incidente_id)
+        if incidente and incidente.cliente:
+            notificar_cliente_cambio_estado(
+                db=db,
+                cliente_usuario_id=incidente.cliente.usuario_id,
+                incidente_id=incidente.id,
+                mensaje="¡Tu incidente fue aceptado por un taller!",
+                tipo="estado_asignacion",
+            )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error enviando push al cliente: {e}")
+    # ─────────────────────────────────────────────────────────────────────
+
     BitacoraService.registrar(
         db=db,
         usuario_id=usuario.id,
@@ -189,7 +226,7 @@ def aceptar_mi_asignacion(
 
 # MECÁNICO — avanzar estado de su asignación
 @router.patch("/{asignacion_id}/estado", response_model=AsignacionRead)
-def cambiar_estado_asignacion(
+async def cambiar_estado_asignacion(
     asignacion_id: int,
     datos: AsignacionEstadoUpdate,
     usuario: Usuario = Depends(get_current_mecanico),
@@ -217,7 +254,62 @@ def cambiar_estado_asignacion(
             detail=f"Desde '{asignacion.estado.value}' solo puedes ir a: {permitidos_str}"
         )
 
-    return actualizar_estado_asignacion(db, asignacion, datos)
+    asignacion_actualizada = actualizar_estado_asignacion(db, asignacion, datos)
+
+    # ── Notificar al cliente sobre el cambio de estado ───────────────────
+    mensajes_estado = {
+        "en_camino":       "El mecánico está en camino a tu ubicación.",
+        "en_atencion":     "El mecánico llegó y está atendiendo tu vehículo.",
+        "finalizado":      "Tu incidente fue atendido y finalizado.",
+        "cancelado":       "Tu incidente fue cancelado.",
+    }
+
+    nuevo_estado_str = datos.estado.value  # .value porque EstadoAsignacion es un Enum
+    if nuevo_estado_str in mensajes_estado:
+        try:
+            incidente = get_incidente_por_id(db, asignacion.incidente_id)
+            if incidente and incidente.cliente:
+                notificar_cliente_cambio_estado(
+                    db=db,
+                    cliente_usuario_id=incidente.cliente.usuario_id,
+                    incidente_id=incidente.id,
+                    mensaje=mensajes_estado[nuevo_estado_str],
+                    tipo="estado_asignacion",
+                )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Error enviando push al cliente: {e}")
+    # ─────────────────────────────────────────────────────────────────────
+
+
+    # --- notificar por WebSocket a todos los conectados al incidente ---
+    # Construir datos del mecánico para enviar al cliente
+    mecanico_datos = None
+    if asignacion.mecanico:
+        mecanico_datos = {
+            "id": asignacion.mecanico.id,
+            "nombre": asignacion.mecanico.usuario.nombre if asignacion.mecanico.usuario else "Mecánico",
+            "telefono": asignacion.mecanico.telefono,
+            "lat": asignacion.mecanico.latitud,
+            "lng": asignacion.mecanico.longitud,
+        }
+
+    await manager.broadcast(
+        incidente_id=asignacion.incidente_id,
+        mensaje={
+            "tipo": "cambio_estado",
+            "estado": datos.estado.value,
+            "asignacion_id": asignacion.id,
+            "incidente_id": asignacion.incidente_id,
+            "mecanico": mecanico_datos,
+        }
+    )
+
+    # Limpiar posición del mecánico de memoria si el servicio terminó
+    if datos.estado in (EstadoAsignacion.finalizado, EstadoAsignacion.cancelado):
+        manager.limpiar_posicion(asignacion.incidente_id)
+
+    return asignacion_actualizada
 
 
 # COMPARTIDO — obtener una asignación por ID

@@ -15,6 +15,9 @@ import 'package:movil/features/cliente/bloc/evidencia_cubit.dart';
 import 'package:movil/features/cliente/bloc/evidencia_state.dart';
 import 'package:movil/models/evidencia.dart';
 
+import 'package:go_router/go_router.dart';
+import 'package:movil/config/routes.dart';
+
 
 class DetalleIncidenteScreen extends StatelessWidget {
   final int incidenteId;
@@ -101,7 +104,7 @@ class _DetalleView extends StatelessWidget {
                     ],
                     _CardEvidencias(incidenteId: state.incidente.id),
                     const SizedBox(height: 20),
-                    _CardAsignacion(asignacion: state.asignacion),
+                    _CardAsignacion(asignacion: state.asignacion, incidenteId: state.incidente.id),
 
 
 
@@ -139,7 +142,7 @@ class _DetalleView extends StatelessWidget {
               ),
             );
           }
-
+        
           return const SizedBox.shrink();
         },
       ),
@@ -282,7 +285,8 @@ class _CardFoto extends StatelessWidget {
 // ─── Card: estado de la asignación ──────────────────────────────────────────
 class _CardAsignacion extends StatelessWidget {
   final AsignacionServicio? asignacion;
-  const _CardAsignacion({this.asignacion});
+  final int incidenteId;
+  const _CardAsignacion({this.asignacion, required this.incidenteId});
 
   @override
   Widget build(BuildContext context) {
@@ -367,6 +371,34 @@ class _CardAsignacion extends StatelessWidget {
                 ),
               ),
             ],
+
+            // ── NUEVO: botón de tracking ───────────────────────────────────────────
+            if (asignacion?.estado == EstadoAsignacion.enCamino ||
+                asignacion?.estado == EstadoAsignacion.enServicio) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    context.pushNamed(
+                      AppRoutes.trackingIncidente,
+                      pathParameters: {'id': incidenteId.toString()},
+                    );
+                  },
+                  icon: const Icon(Icons.location_on),
+                  label: const Text('Ver mecánico en tiempo real'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
             // Barra de progreso (estados)
             const SizedBox(height: 16),
             _BarraProgreso(estado: asignacion!.estado),

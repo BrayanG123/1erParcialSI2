@@ -17,7 +17,10 @@ from app.routers import (
     calificacion,
     evidencia,
     historial_estado,
-    kpi
+    kpi,
+    websocket,
+    notificaciones,
+    web_push
  )
 
 
@@ -56,6 +59,9 @@ app.include_router(calificacion.router)
 app.include_router(evidencia.router)
 app.include_router(historial_estado.router)
 app.include_router(kpi.router)
+app.include_router(websocket.router)
+app.include_router(notificaciones.router)
+app.include_router(web_push.router)
 
 
 @app.get("/")

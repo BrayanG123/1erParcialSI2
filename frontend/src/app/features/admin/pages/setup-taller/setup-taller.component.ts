@@ -123,9 +123,16 @@ export class SetupTallerComponent implements AfterViewInit, OnDestroy {
       this.errorMessage = '';
 
       this.tallerService.registrarTaller(this.setupForm.getRawValue()).subscribe({
-        next: () => {
+        next: (response) => {
           this.isSubmitting = false;
-          localStorage.setItem('has_taller', 'true');
+          // El backend devuelve un JWT nuevo con el tenant_id ya asignado.
+          // Lo guardamos vía AuthService para que el interceptor envíe el
+          // token correcto; de lo contrario el dashboard de KPIs daría 403.
+          if (response?.access_token) {
+            this.authService.actualizarSesion(response.access_token, response.refresh_token);
+          } else {
+            localStorage.setItem('has_taller', 'true');
+          }
           this.router.navigate(['/admin/dashboard']);
         },
         error: (err: any) => {

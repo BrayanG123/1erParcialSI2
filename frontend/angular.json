@@ -21,11 +21,13 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
-                "src/favicon.ico",
-                "src/assets"
-              ],
+              "src/favicon.ico",
+              "src/assets",
+              "src/manifest.webmanifest"
+            ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
+              "node_modules/leaflet/dist/leaflet.css"
             ],
             "scripts": []
           },
@@ -43,7 +45,8 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json"
             },
             "development": {
               "optimization": false,
@@ -83,15 +86,14 @@
             ],
             "tsConfig": "tsconfig.spec.json",
             "assets": [
-                "src/favicon.ico",
-                "src/assets"
-              ],
+              "src/favicon.ico",
+              "src/assets"
+            ],
             "styles": [
-                  "src/styles.css",
-                  "node_modules/maplibre-gl/dist/maplibre-gl.css"
-                ],  
-            "scripts": [
-            ]
+              "src/styles.css",
+              "node_modules/maplibre-gl/dist/maplibre-gl.css"
+            ],
+            "scripts": []
           },
           "defaultConfiguration": "development"
         }

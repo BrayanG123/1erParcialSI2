@@ -41,5 +41,8 @@ class ApiConstants {
   // Historial de estados
   static const String historialEstados = '/historial-estados';
 
-
+   // Notificaciones
+  static const String pushToken = '/notificaciones/push-token';
+  static const String misNotificaciones = '/notificaciones/mias';
+  static const String notificacionesNoLeidas = '/notificaciones/no-leidas/conteo';
 }

@@ -104,6 +104,21 @@ export class AuthService {
     return this.getFromStorage('access_token');
   }
 
+  /**
+   * Reemplaza el access token (y opcionalmente el refresh) de la sesión actual.
+   * Se usa tras configurar el taller: el backend devuelve un JWT nuevo que ya
+   * incluye el tenant_id. Pasa por saveToStorage para actualizar también el
+   * token en memoria (tokenEnMemoria), de lo contrario el interceptor seguiría
+   * enviando el token viejo sin tenant.
+   */
+  actualizarSesion(accessToken: string, refreshToken?: string): void {
+    this.saveToStorage('access_token', accessToken);
+    if (refreshToken) {
+      this.saveToStorage('refresh_token', refreshToken);
+    }
+    this.saveToStorage('has_taller', 'true');
+  }
+
   logout(): void {
     this.removeFromStorage('access_token');
     this.removeFromStorage('has_taller');
