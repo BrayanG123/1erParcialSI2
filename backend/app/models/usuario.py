@@ -37,6 +37,7 @@ class Usuario(Base):
     perfil_mecanico = relationship("Mecanico", back_populates="usuario", uselist=False)
     perfil_administrador = relationship("Administrador", back_populates="usuario", uselist=False)
 
+    notificaciones = relationship("Notificacion", back_populates="usuario")
 
 
 # TABLA PERFIL: clientes

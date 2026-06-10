@@ -59,7 +59,7 @@ def reportar_incidente(
         notificar_admins_nuevo_incidente(db, incidente.id)
         # Push para web (Web Push / VAPID)
         from app.services.webpush_service import notificar_admins_nuevo_incidente_web
-        notificar_admins_nuevo_incidente_web(db, nuevo_incidente.id)
+        notificar_admins_nuevo_incidente_web(db, incidente.id)
     except Exception as e:
         # Loguear el error pero NO fallar el endpoint
         import logging

@@ -29,8 +29,8 @@
     </div>
   </div>
 
-  @if (mostrarBannerNotif) {
-    <div class="mb-4 flex items-center gap-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-sm">
+  <!-- @if (mostrarBannerNotif) { -->
+    <div *ngIf="mostrarBannerNotif" class="mb-4 flex items-center gap-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-sm">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
         <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
       </svg>
@@ -47,7 +47,7 @@
         Ahora no
       </button>
     </div>
-  }
+  <!-- } -->
 
   <!-- Barra de Herramientas (Filtros y Buscador) -->
   <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-wrap items-center gap-4">

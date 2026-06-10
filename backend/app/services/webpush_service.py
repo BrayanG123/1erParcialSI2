@@ -46,7 +46,7 @@ def enviar_web_push(
     Retorna True si el envío fue exitoso, False si falló.
     """
     if not _webpush_disponible:
-        return False
+        return None
 
     try:
         from app.config import settings
@@ -91,10 +91,10 @@ def enviar_web_push(
                 # Retornar código especial para indicar que hay que eliminar la suscripción
                 return False
         logger.error(f"WebPushException: {e}")
-        return False
+        return None
     except Exception as e:
         logger.error(f"Error inesperado en Web Push: {e}")
-        return False
+        return None
     
 
 def notificar_admins_nuevo_incidente_web(db, incidente_id: int) -> None:
@@ -135,7 +135,7 @@ def notificar_admins_nuevo_incidente_web(db, incidente_id: int) -> None:
     for sub in suscripciones:
         exito = enviar_web_push(sub.endpoint, sub.p256dh, sub.auth, titulo, cuerpo, datos)
 
-        if not exito:
+        if exito is False:
             # Marcar para eliminar después del loop (no modificar la lista mientras iteramos)
             suscripciones_a_eliminar.append(sub.id)
 
