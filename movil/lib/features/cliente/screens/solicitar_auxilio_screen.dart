@@ -156,7 +156,35 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
               ),
             );
             context.pop(); // vuelve al home del cliente
-          } else if (state is IncidenteError) {
+          } 
+
+          if (state is IncidenteGuardadoOffline) {
+            // Mostrar mensaje claro al usuario
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.wifi_off, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Sin conexión. Tu solicitud se guardó localmente '
+                        'y se enviará cuando haya internet. '
+                        '(${state.totalPendientes} pendiente(s))',
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.orange.shade700,
+                duration: const Duration(seconds: 6),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            // Volver a la pantalla anterior (misma experiencia que cuando hay internet)
+            context.pop();
+          } 
+          
+          if (state is IncidenteError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.mensaje),
@@ -165,6 +193,8 @@ class _SolicitarAuxilioViewState extends State<_SolicitarAuxilioView> {
             );
           }
         },
+
+        
         builder: (context, state) {
           if (state is IncidenteCargando && state is! IncidenteDatosCargados) {
             return const Center(child: CircularProgressIndicator());

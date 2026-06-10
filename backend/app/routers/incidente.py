@@ -29,6 +29,7 @@ from app.core.dependencies import (
 from app.services.bitacora import BitacoraService
 from app.crud.asignacion_servicio import get_asignacion_por_incidente
 from app.schemas.asignacion_servicio import AsignacionRead
+from app.services.notificacion_service import notificar_admins_nuevo_incidente
 
 
 
@@ -51,6 +52,19 @@ def reportar_incidente(
         accion="REPORTAR_INCIDENTE",
         descripcion=f"Incidente #{incidente.id} reportado",
     )
+
+    # ── Notificar a administradores de taller 
+    try:
+        # Push para móvil (FCM)
+        notificar_admins_nuevo_incidente(db, incidente.id)
+        # Push para web (Web Push / VAPID)
+        from app.services.webpush_service import notificar_admins_nuevo_incidente_web
+        notificar_admins_nuevo_incidente_web(db, incidente.id)
+    except Exception as e:
+        # Loguear el error pero NO fallar el endpoint
+        import logging
+        logging.getLogger(__name__).error(f"Error enviando push a admins: {e}")
+
     return incidente
 
 

@@ -28,11 +28,16 @@ class Usuario(Base):
     fecha_creacion = Column(DateTime, default=datetime.utcnow, nullable=False)
     fecha_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # ── NUEVO: token FCM del dispositivo del usuario ─────────────────────────
+    # Cada vez que el usuario inicia sesión en un dispositivo, la app enviara este token al backend. Se sobreescribe si el usuario cambia de dispositivo.
+    push_token = Column(String(500), nullable=True)
+
     # Relaciones con las tablas de perfil (una a una)
     perfil_cliente = relationship("Cliente", back_populates="usuario", uselist=False)
     perfil_mecanico = relationship("Mecanico", back_populates="usuario", uselist=False)
     perfil_administrador = relationship("Administrador", back_populates="usuario", uselist=False)
 
+    notificaciones = relationship("Notificacion", back_populates="usuario")
 
 
 # TABLA PERFIL: clientes

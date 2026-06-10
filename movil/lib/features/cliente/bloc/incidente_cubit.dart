@@ -5,19 +5,26 @@ import 'package:movil/features/cliente/services/categoria_service.dart';
 import 'package:movil/features/cliente/services/incidente_service.dart';
 import 'package:movil/features/cliente/services/vehiculo_service.dart';
 
+import 'dart:io';
+import 'package:uuid/uuid.dart';
+import 'package:movil/features/cliente/services/offline_incidente_service.dart';
+
 
 class IncidenteCubit extends Cubit<IncidenteState>{
   final VehiculoService  _vehiculoService;
   final CategoriaService _categoriaService;
   final IncidenteService _incidenteService;
+  final OfflineIncidenteService _offlineService;
 
   IncidenteCubit({
     VehiculoService?  vehiculoService,
     CategoriaService? categoriaService,
     IncidenteService? incidenteService,
+    OfflineIncidenteService? offlineService,
   })  : _vehiculoService  = vehiculoService  ?? VehiculoService(),
         _categoriaService = categoriaService ?? CategoriaService(),
         _incidenteService = incidenteService ?? IncidenteService(),
+        _offlineService   = offlineService   ?? OfflineIncidenteService(),
         super(const IncidenteInitial());
 
 
@@ -82,7 +89,29 @@ class IncidenteCubit extends Cubit<IncidenteState>{
     } on ApiException catch (e) {
       emit(IncidenteError(e.mensaje));
     } catch (_) {
-      emit(const IncidenteError('Error al crear el incidente.'));
+      // No se pudo conectar con el servidor.
+      // Guardar el incidente localmente para sincronizar después.
+
+      // Generar un ID único local para identificar este intento
+      const uuid = Uuid();
+      final pendiente = IncidentePendiente(
+        idempotencyKey: uuid.v4(),
+        descripcion:    descripcion,
+        latitud:        latitud,
+        longitud:       longitud,
+        clienteId:      clienteId,
+        vehiculoId:     vehiculoId,
+        categoriaId:    categoriaId,
+        rutaFoto:       rutaFoto,
+        rutaAudio:      rutaAudio,
+        timestamp:      DateTime.now(),
+      );
+
+      await _offlineService.guardar(pendiente);
+
+      emit(IncidenteGuardadoOffline(
+        totalPendientes: _offlineService.cantidadPendientes,
+      ));
     }
   }
 
