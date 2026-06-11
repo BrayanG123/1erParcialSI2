@@ -157,6 +157,23 @@ export class AsignacionesComponent implements OnInit {
     this.selectedAsignacion = null;
   }
 
+  // ── Mapa: ubicación del cliente (incidente) ──
+
+  get tieneUbicacion(): boolean {
+    const inc = this.selectedAsignacion?.incidente;
+    return inc?.latitud != null && inc?.longitud != null;
+  }
+
+  abrirEnMapa(): void {
+    const inc = this.selectedAsignacion?.incidente;
+    if (!inc?.latitud || !inc?.longitud) return;
+    // Abre Google Maps en una pestaña nueva con el pin en la ubicación del incidente
+    window.open(
+      `https://www.google.com/maps?q=${inc.latitud},${inc.longitud}`,
+      '_blank'
+    );
+  }
+
   private mostrarNotificacion(msg: string): void {
     this.notificacion = msg;
     this.error = null;

@@ -32,15 +32,7 @@
         </div>
       </div>
 
-      <!-- Dirección -->
-      <div class="space-y-1">
-        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Dirección</label>
-        <input formControlName="direccion" type="text"
-          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-[#1C2434] focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder:text-slate-300 font-medium text-sm"
-          placeholder="Ej. Av. Siempre Viva 123">
-      </div>
-
-      <!-- Mapa -->
+      <!-- Mapa (la dirección se detecta automáticamente de la ubicación marcada) -->
       <div class="space-y-1.5">
         <label class="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">
           Ubicación del Taller
@@ -81,6 +73,18 @@
               {{ setupForm.get('longitud')?.value | number:'1.4-4' }}
             </p>
           </ng-container>
+        </div>
+
+        <!-- Dirección detectada automáticamente -->
+        <div *ngIf="locationSelected" class="flex items-start gap-2 px-1">
+          <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
+          </svg>
+          <p class="text-xs text-slate-500 font-medium leading-snug">
+            <span *ngIf="buscandoDireccion" class="text-slate-400 italic">Detectando dirección…</span>
+            <span *ngIf="!buscandoDireccion">{{ direccionDetectada || setupForm.get('direccion')?.value }}</span>
+          </p>
         </div>
       </div>
 

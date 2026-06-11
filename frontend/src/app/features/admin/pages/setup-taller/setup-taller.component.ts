@@ -1,5 +1,6 @@
 import { Component, inject, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import maplibregl from 'maplibre-gl';
@@ -19,17 +20,25 @@ export class SetupTallerComponent implements AfterViewInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
 
+  private http = inject(HttpClient);
+
   isSubmitting = false;
   errorMessage = '';
   locationSelected = false;
   gpsLoading = true;
+
+  // Dirección obtenida automáticamente de la ubicación marcada en el mapa
+  // (geocodificación inversa con Nominatim/OpenStreetMap)
+  direccionDetectada = '';
+  buscandoDireccion = false;
 
   private map!: maplibregl.Map;
   private marker!: maplibregl.Marker;
 
   setupForm = this.fb.nonNullable.group({
     nombre:    ['', [Validators.required, Validators.minLength(3)]],
-    direccion: ['', [Validators.required, Validators.minLength(5)]],
+    // La dirección ya no se escribe a mano: se llena sola al marcar el mapa
+    direccion: [''],
     telefono:  ['', [Validators.required]],
     latitud:   [0, [Validators.required]],
     longitud:  [0, [Validators.required]]
@@ -115,6 +124,39 @@ export class SetupTallerComponent implements AfterViewInit, OnDestroy {
   private updateCoords(lat: number, lng: number) {
     this.setupForm.patchValue({ latitud: lat, longitud: lng });
     this.locationSelected = true;
+    this.obtenerDireccion(lat, lng);
+  }
+
+  /**
+   * Geocodificación inversa: convierte las coordenadas marcadas en una
+   * dirección legible usando Nominatim (OpenStreetMap, gratis, sin clave).
+   * Si falla (sin internet, rate limit), usa las coordenadas como dirección.
+   */
+  private obtenerDireccion(lat: number, lng: number) {
+    // Fallback inmediato: si Nominatim falla, esto es lo que se guarda
+    const fallback = `Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`;
+    this.setupForm.patchValue({ direccion: fallback });
+
+    this.buscandoDireccion = true;
+    this.http.get<any>(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=es`
+    ).subscribe({
+      next: (res) => {
+        this.buscandoDireccion = false;
+        if (res?.display_name) {
+          // Recortar a un largo razonable para la columna de la BD (500)
+          const direccion = String(res.display_name).slice(0, 480);
+          this.direccionDetectada = direccion;
+          this.setupForm.patchValue({ direccion });
+        } else {
+          this.direccionDetectada = fallback;
+        }
+      },
+      error: () => {
+        this.buscandoDireccion = false;
+        this.direccionDetectada = fallback;
+      }
+    });
   }
 
   onSubmit() {
