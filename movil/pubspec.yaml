@@ -70,8 +70,8 @@ dependencies:
   # --- Speech to text ---
   # speech_to_text: ^7.3.0
 
-  # --- Pagos Stripe ---
-  # flutter_stripe: ^11.1.0
+  # --- Pagos Stripe (Checkout en navegador externo) ---
+  url_launcher: ^6.3.0
 
   # --- Utilidades ---
   intl: ^0.19.0

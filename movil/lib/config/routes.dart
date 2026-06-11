@@ -88,7 +88,10 @@ final appRouter = GoRouter(
       path: '/mecanico/asignacion/:id',
       name: AppRoutes.detalleAsignacion,
       builder: (context, state) {
-        final id = state.extra as int;
+        // El id llega por el path (/mecanico/asignacion/5);
+        // se mantiene extra como respaldo por compatibilidad.
+        final id = state.extra as int? ??
+            int.parse(state.pathParameters['id']!);
         return DetalleAsignacionScreen(asignacionId: id);
       },
     ),

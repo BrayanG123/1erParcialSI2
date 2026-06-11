@@ -31,7 +31,7 @@ class ApiClient {
       LogInterceptor(
         requestBody: true,
         responseBody: true,
-        requestHeader: false,
+        requestHeader: true,
         responseHeader: false,
         error: true,
         logPrint: (log) => debugPrint('[DIO] $log'),

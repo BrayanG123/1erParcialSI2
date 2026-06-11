@@ -47,7 +47,7 @@ export class SetupTallerComponent implements AfterViewInit, OnDestroy {
     this.map = new maplibregl.Map({
       container: 'taller-map',
       style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json', // colorido
-      center: [-68.1500, -16.5000],
+      center: [-63.1812, -17.7833],  // Santa Cruz de la Sierra [lng, lat]
       zoom: 13
     });
 

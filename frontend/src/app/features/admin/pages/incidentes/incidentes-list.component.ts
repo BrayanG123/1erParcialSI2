@@ -43,6 +43,13 @@ export class IncidentesListComponent implements OnInit {
   filtroDistancia = '50';
   searchTerm = '';
 
+  // Orden y paginación (cliente)
+  ordenRecientes = true;
+  pagina = 1;
+  tamanoPagina = 10;
+  probandoPushId: number | null = null;
+  Math = Math; // para usar Math.min en el template
+
   ngOnInit(): void {
     this.cargarDatos();
   }
@@ -149,17 +156,109 @@ export class IncidentesListComponent implements OnInit {
   }
 
   getFilteredIncidentes() {
-    return this.incidentesPendientes.filter(inc => {
-      const matchSearch = !this.searchTerm ||
-        inc.descripcion.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        inc.id.toString().includes(this.searchTerm);
+    const factor = this.ordenRecientes ? -1 : 1;
+    return this.incidentesPendientes
+      .filter(inc => {
+        const matchSearch = !this.searchTerm ||
+          inc.descripcion.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+          inc.id.toString().includes(this.searchTerm);
 
-      const matchPrioridad = !this.filtroPrioridad || inc.prioridad === this.filtroPrioridad;
+        const matchPrioridad = !this.filtroPrioridad || inc.prioridad === this.filtroPrioridad;
 
-      const distanciaNum = parseFloat(inc.distancia);
-      const matchDistancia = this.filtroDistancia === '50' || distanciaNum <= parseInt(this.filtroDistancia);
+        const distanciaNum = parseFloat(inc.distancia);
+        const matchDistancia = this.filtroDistancia === '50' || distanciaNum <= parseInt(this.filtroDistancia);
 
-      return matchSearch && matchPrioridad && matchDistancia;
+        return matchSearch && matchPrioridad && matchDistancia;
+      })
+      .sort((a, b) =>
+        factor * (new Date(a.fecha_hora ?? 0).getTime() - new Date(b.fecha_hora ?? 0).getTime())
+      );
+  }
+
+  // ── Paginación ──────────────────────────────────────────────
+
+  getIncidentesPagina() {
+    const inicio = (this.pagina - 1) * this.tamanoPagina;
+    return this.getFilteredIncidentes().slice(inicio, inicio + this.tamanoPagina);
+  }
+
+  get totalPaginas(): number {
+    return Math.max(1, Math.ceil(this.getFilteredIncidentes().length / this.tamanoPagina));
+  }
+
+  cambiarPagina(delta: number): void {
+    const nueva = this.pagina + delta;
+    if (nueva < 1 || nueva > this.totalPaginas) return;
+    this.pagina = nueva;
+  }
+
+  resetPagina(): void {
+    this.pagina = 1;
+  }
+
+  toggleOrden(): void {
+    this.ordenRecientes = !this.ordenRecientes;
+    this.pagina = 1;
+  }
+
+  // ── DEBUG: prueba de notificación push al cliente ───────────
+
+  probarNotificacion(inc: any): void {
+    this.probandoPushId = inc.id;
+    console.group(`🔔 [TEST PUSH] Incidente #${inc.id}`);
+    console.log('Enviando prueba de push al cliente del incidente...', inc);
+
+    this.asignacionService.probarPushCliente(inc.id).subscribe({
+      next: (diag: any) => {
+        this.probandoPushId = null;
+        console.log('📋 Diagnóstico completo del backend:', diag);
+        console.log('  • Cliente:', diag.cliente_nombre, `(usuario_id=${diag.cliente_usuario_id})`);
+        console.log('  • firebase-admin instalado:', diag.firebase_admin_instalado);
+        console.log('  • Firebase inicializado:', diag.firebase_inicializado);
+        console.log('  • Cliente tiene push_token:', diag.tiene_push_token);
+        if (diag.push_token_preview) console.log('  • Token (preview):', diag.push_token_preview);
+        if ('push_enviado' in diag) console.log('  • Push enviado a FCM:', diag.push_enviado);
+        console.log('%c➡ CONCLUSIÓN: ' + (diag.conclusion ?? diag.error ?? 'sin conclusión'),
+          'font-weight:bold; color:' + (diag.push_enviado ? 'green' : 'red'));
+        console.groupEnd();
+
+        if (diag.push_enviado) {
+          this.mostrarNotificacion('✅ Push de prueba enviado. Revisa el celular del cliente.');
+        } else {
+          this.mostrarError('❌ ' + (diag.conclusion ?? diag.error ?? 'Falló el envío. Ver consola (F12).'));
+        }
+      },
+      error: (err: any) => {
+        this.probandoPushId = null;
+        console.error('❌ Error HTTP llamando al endpoint de prueba:', err);
+        console.groupEnd();
+        this.mostrarError(err?.error?.detail || 'Error al probar la notificación.');
+      }
+    });
+  }
+
+  /**
+   * Acepta un incidente de la lista de solicitudes disponibles
+   * @param incidenteId ID del incidente a aceptar
+   */
+  aceptarIncidente(incidenteId: number) {
+    this.loading = true;
+    // Se envía el ID del incidente. Como mecanico_id no se provee, el backend
+    // crea una asignación en estado 'pendiente' vinculada a tu taller (tenant).
+    const datos: AsignacionRequest = {
+      incidente_id: incidenteId
+    };
+    this.asignacionService.crearAsignacion(datos).subscribe({
+      next: () => {
+        // Remover el incidente de la lista local
+        this.incidentesPendientes = this.incidentesPendientes.filter(i => i.id !== incidenteId);
+        this.loading = false;
+        this.mostrarNotificacion('¡Solicitud aceptada! Ahora puedes asignarle un mecánico en la sección de Asignaciones.');
+      },
+      error: (err) => {
+        this.loading = false;
+        this.mostrarError(err?.error?.detail || 'No se pudo aceptar la solicitud');
+      }
     });
   }
 

@@ -13,9 +13,9 @@ import 'package:dio/dio.dart';
 
 
 
-// Coordenadas de Cochabamba como posición inicial del mapa
-const _latInicial = -17.3895;
-const _lngInicial = -66.1540;
+// Coordenadas de Santa Cruz de la Sierra como posición inicial del mapa
+const _latInicial = -17.7833;
+const _lngInicial = -63.1812;
 
 class TrackingIncidenteScreen extends StatefulWidget {
   final int incidenteId;
@@ -305,7 +305,7 @@ class _MapaTracking extends StatelessWidget {
     return FlutterMap(
       mapController: mapController,
       options: MapOptions(
-        // Si hay posición del mecánico, centrar ahí; si no, en Cochabamba
+        // Si hay posición del mecánico, centrar ahí; si no, en Santa Cruz
         initialCenter: posicionMecanico ?? const LatLng(_latInicial, _lngInicial),
         initialZoom: 14,
         interactionOptions: const InteractionOptions(

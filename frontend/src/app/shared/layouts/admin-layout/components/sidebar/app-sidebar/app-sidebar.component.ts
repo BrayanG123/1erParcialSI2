@@ -157,6 +157,7 @@ export class AppSidebarComponent implements OnInit, OnDestroy {
           title: 'FINANZAS',
           items: [
             { name: 'Pagos y comisiones', path: '/admin/pagos', icon: this.icons['credit-card'] },
+            { name: 'Reportes Dinámicos', path: '/admin/reportes', icon: this.icons['chart-bar'] },
           ]
         },
         {

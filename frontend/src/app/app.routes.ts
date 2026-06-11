@@ -97,6 +97,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/pages/Pagos/pagos.component').then(m => m.PagosComponent)
       },
       {
+        path: 'reportes',
+        loadComponent: () => import('./features/admin/pages/reportes/reportes.component').then(m => m.ReportesComponent)
+      },
+      {
         path: 'comisiones',
         loadComponent: () => import('./features/admin/pages/comisiones/comisiones.component').then(m => m.ComisionesComponent)
       },

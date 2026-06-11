@@ -1,0 +1,245 @@
+<div class="p-8 bg-[#F8FAFC] min-h-screen font-sans">
+
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Reportes Dinámicos</h1>
+    <p class="text-sm text-slate-500 mt-1">
+      Construye reportes gerenciales (detalle) o ejecutivos (agrupados) sobre los datos de tu taller.
+    </p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error"
+    class="mb-6 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-bold">
+    {{ error }}
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+
+    <!-- ════════ PANEL IZQUIERDO: Constructor de consulta ════════ -->
+    <div class="xl:col-span-1 space-y-6">
+
+      <!-- Entidad y tipo -->
+      <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">1. Origen de datos</h3>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Entidad</label>
+          <select [(ngModel)]="entidad" (ngModelChange)="onEntidadChange()"
+            class="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 focus:outline-none">
+            <option value="">Seleccionar entidad...</option>
+            <option *ngFor="let e of entidades" [value]="e">{{ e }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Tipo de reporte</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button (click)="tipoReporte = 'gerencial'"
+              [ngClass]="tipoReporte === 'gerencial' ? 'bg-[#4F46E5] text-white shadow-md' : 'bg-slate-50 text-slate-500'"
+              class="py-2.5 rounded-xl text-xs font-bold transition-all">
+              Gerencial (detalle)
+            </button>
+            <button (click)="tipoReporte = 'ejecutivo'"
+              [ngClass]="tipoReporte === 'ejecutivo' ? 'bg-[#4F46E5] text-white shadow-md' : 'bg-slate-50 text-slate-500'"
+              class="py-2.5 rounded-xl text-xs font-bold transition-all">
+              Ejecutivo (agrupado)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div *ngIf="entidad" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">2. Filtros</h3>
+          <button (click)="agregarFiltro()"
+            class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors">+ Agregar</button>
+        </div>
+
+        <p *ngIf="filtros.length === 0" class="text-xs text-slate-300 font-medium">Sin filtros (se incluye todo).</p>
+
+        <div *ngFor="let f of filtros; let i = index" class="bg-slate-50 rounded-xl p-3 space-y-2">
+          <div class="flex gap-2">
+            <select [(ngModel)]="f.campo"
+              class="flex-1 bg-white border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 min-w-0">
+              <option *ngFor="let c of camposEntidad" [value]="c">{{ c }}</option>
+            </select>
+            <button (click)="quitarFiltro(i)" class="text-red-400 hover:text-red-600 text-xs font-black px-1">✕</button>
+          </div>
+          <div class="flex gap-2">
+            <select [(ngModel)]="f.operador"
+              class="flex-1 bg-white border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 min-w-0">
+              <option *ngFor="let op of operadores" [value]="op">{{ op }}</option>
+            </select>
+            <input *ngIf="requiereValor(f.operador)" [(ngModel)]="f.valor" type="text"
+              [placeholder]="f.operador === 'en_lista' ? 'v1, v2, v3' : 'valor'"
+              class="flex-1 bg-white border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-600 min-w-0">
+          </div>
+        </div>
+
+        <!-- Rango de fechas -->
+        <div class="pt-2 border-t border-slate-50">
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Rango de fechas (opcional)</label>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="date" [(ngModel)]="fechaDesde"
+              class="bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-600">
+            <input type="date" [(ngModel)]="fechaHasta"
+              class="bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-600">
+          </div>
+        </div>
+      </div>
+
+      <!-- Agrupación (solo ejecutivo) -->
+      <div *ngIf="entidad && tipoReporte === 'ejecutivo'"
+        class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">3. Agrupación</h3>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Agrupar por (group_by)</label>
+          <div class="flex flex-wrap gap-2">
+            <button *ngFor="let c of camposEntidad" (click)="toggleGroupBy(c)"
+              [ngClass]="groupBy.includes(c) ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-500'"
+              class="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all">
+              {{ c }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase">Agregaciones</label>
+            <button (click)="agregarAgregacion()"
+              class="text-xs font-bold text-indigo-600 hover:text-indigo-800">+ Agregar</button>
+          </div>
+          <div *ngFor="let a of agregaciones; let i = index" class="bg-slate-50 rounded-xl p-3 mb-2 space-y-2">
+            <div class="flex gap-2">
+              <select [(ngModel)]="a.funcion"
+                class="flex-1 bg-white border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 min-w-0">
+                <option *ngFor="let fn of funcionesAgregacion" [value]="fn">{{ fn }}</option>
+              </select>
+              <select [(ngModel)]="a.campo"
+                class="flex-1 bg-white border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 min-w-0">
+                <option value="">{{ a.funcion === 'contar' ? '(filas)' : 'campo...' }}</option>
+                <option *ngFor="let c of camposEntidad" [value]="c">{{ c }}</option>
+              </select>
+              <button (click)="quitarAgregacion(i)" class="text-red-400 hover:text-red-600 text-xs font-black px-1">✕</button>
+            </div>
+            <input [(ngModel)]="a.alias" type="text" placeholder="alias (ej: ingresos)"
+              class="w-full bg-white border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-600">
+          </div>
+        </div>
+      </div>
+
+      <!-- Orden + ejecutar -->
+      <div *ngIf="entidad" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">
+          {{ tipoReporte === 'ejecutivo' ? '4' : '3' }}. Orden y ejecución
+        </h3>
+        <div class="flex gap-2">
+          <select [(ngModel)]="ordenCampo"
+            class="flex-1 bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600 min-w-0">
+            <option value="">Sin orden específico</option>
+            <option *ngFor="let c of camposOrdenables" [value]="c">{{ c }}</option>
+          </select>
+          <select [(ngModel)]="ordenDireccion"
+            class="bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600">
+            <option value="desc">↓ desc</option>
+            <option value="asc">↑ asc</option>
+          </select>
+        </div>
+        <div class="flex gap-2 items-center">
+          <label class="text-[10px] font-bold text-slate-400 uppercase">Filas por página</label>
+          <select [(ngModel)]="tamanoPagina"
+            class="bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-600">
+            <option [ngValue]="25">25</option>
+            <option [ngValue]="50">50</option>
+            <option [ngValue]="100">100</option>
+            <option [ngValue]="500">500</option>
+          </select>
+        </div>
+        <button (click)="generar()" [disabled]="loading"
+          class="w-full bg-[#4F46E5] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-100 hover:bg-[#4338CA] active:scale-95 transition-all disabled:opacity-50">
+          {{ loading ? 'Generando...' : 'Generar reporte' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════ PANEL DERECHO: Resultados ════════ -->
+    <div class="xl:col-span-2">
+
+      <!-- Placeholder -->
+      <div *ngIf="!resultado && !loading"
+        class="bg-white p-16 rounded-3xl border border-dashed border-slate-200 text-center">
+        <p class="text-slate-400 font-bold">Configura tu reporte y presiona "Generar reporte"</p>
+        <p class="text-slate-300 text-xs mt-2">Los resultados aparecerán aquí.</p>
+      </div>
+
+      <div *ngIf="loading" class="flex justify-center py-24 bg-white rounded-3xl border border-slate-100">
+        <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+
+      <!-- Tabla de resultados -->
+      <div *ngIf="resultado && !loading" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+
+        <div class="px-6 py-4 border-b border-slate-50 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span class="text-sm font-black text-slate-800 capitalize">{{ resultado.entidad }}</span>
+            <span class="ml-2 text-[10px] font-black uppercase px-2 py-0.5 rounded-full"
+              [ngClass]="resultado.tipo_reporte === 'agrupado' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'">
+              {{ resultado.tipo_reporte === 'agrupado' ? 'Ejecutivo' : 'Gerencial' }}
+            </span>
+            <span class="ml-3 text-xs text-slate-400 font-medium">{{ resultado.total }} resultado(s)</span>
+          </div>
+          <button (click)="exportarCSV()" [disabled]="!resultado.filas.length"
+            class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-xs font-bold hover:bg-emerald-100 transition-all disabled:opacity-40">
+            ⬇ Exportar CSV
+          </button>
+        </div>
+
+        <div *ngIf="resultado.filas.length === 0" class="py-16 text-center">
+          <p class="text-slate-400 font-bold text-sm">Sin resultados para los criterios indicados.</p>
+        </div>
+
+        <div *ngIf="resultado.filas.length > 0" class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50/50">
+                <th *ngFor="let col of resultado.columnas"
+                  class="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                  {{ col }}
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              <tr *ngFor="let fila of resultado.filas" class="hover:bg-slate-50/50 transition-colors">
+                <td *ngFor="let col of resultado.columnas"
+                  class="px-4 py-2.5 text-xs font-medium text-slate-600 whitespace-nowrap max-w-[280px] truncate">
+                  {{ formatearCelda(fila[col]) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginación -->
+        <div *ngIf="resultado.filas.length > 0"
+          class="px-6 py-4 border-t border-slate-50 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-400">
+            Página {{ pagina }} de {{ totalPaginas }}
+          </span>
+          <div class="flex gap-2">
+            <button (click)="cambiarPagina(-1)" [disabled]="pagina <= 1"
+              class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition-all">
+              ← Anterior
+            </button>
+            <button (click)="cambiarPagina(1)" [disabled]="pagina >= totalPaginas"
+              class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition-all">
+              Siguiente →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

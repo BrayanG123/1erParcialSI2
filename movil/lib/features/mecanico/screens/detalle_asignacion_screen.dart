@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:movil/config/theme.dart';
 import 'package:movil/features/mecanico/bloc/asignacion_cubit.dart';
 import 'package:movil/features/mecanico/bloc/asignacion_state.dart';
+import 'package:movil/features/mecanico/screens/mapa_cliente_screen.dart';
 import 'package:movil/models/asignacion_servicio.dart';
 
 
@@ -71,7 +73,9 @@ class _DetalleView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _FichaInfo(asignacion: asignacion),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                _BotonMapa(asignacion: asignacion),
+                const SizedBox(height: 16),
                 _BotonesAccion(asignacion: asignacion),
               ],
             ),
@@ -97,8 +101,25 @@ class _FichaInfo extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Descripción del problema reportado por el cliente
+            if (asignacion.incidente != null) ...[
+              const Text('Problema reportado',
+                  style: TextStyle(
+                      color: AppTheme.textoSecundario, fontSize: 13)),
+              const SizedBox(height: 4),
+              Text(
+                asignacion.incidente!.descripcion,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const Divider(height: 24),
+            ],
             _Fila('Asignación', '#${asignacion.id}'),
             _Fila('Incidente',  '#${asignacion.incidenteId}'),
+            if (asignacion.incidente != null)
+              _Fila('Fecha y hora',
+                  DateFormat('dd/MM/yyyy HH:mm')
+                      .format(asignacion.incidente!.fechaHora.toLocal())),
             _Fila('Estado',     _etiquetaEstado(asignacion.estado)),
             if (asignacion.distanciaKm != null)
               _Fila('Distancia', '${asignacion.distanciaKm!.toStringAsFixed(1)} km'),
@@ -116,13 +137,14 @@ class _FichaInfo extends StatelessWidget {
 
   String _etiquetaEstado(EstadoAsignacion e) {
     const map = {
-      EstadoAsignacion.pendiente:   'Pendiente',
-      EstadoAsignacion.aceptada:    'Aceptada',
-      EstadoAsignacion.enCamino:    'En camino',
-      EstadoAsignacion.enServicio:  'En servicio',
-      EstadoAsignacion.completada:  'Completada',
-      EstadoAsignacion.rechazada:   'Rechazada',
-      EstadoAsignacion.cancelada:   'Cancelada',
+      EstadoAsignacion.pendiente:      'Pendiente',
+      EstadoAsignacion.buscandoTaller: 'Buscando taller',
+      EstadoAsignacion.tallerAsignado: 'Taller asignado',
+      EstadoAsignacion.enCamino:       'En camino',
+      EstadoAsignacion.enAtencion:     'En servicio',
+      EstadoAsignacion.finalizado:     'Completada',
+      EstadoAsignacion.rechazada:      'Rechazada',
+      EstadoAsignacion.cancelado:      'Cancelada',
     };
     return map[e] ?? e.name;
   }
@@ -161,6 +183,37 @@ class _Fila extends StatelessWidget {
 }
 
 
+// --- Botón para ver la ubicación del cliente en el mapa ---
+class _BotonMapa extends StatelessWidget {
+  final AsignacionServicio asignacion;
+  const _BotonMapa({required this.asignacion});
+
+  @override
+  Widget build(BuildContext context) {
+    final tieneUbicacion = asignacion.incidente?.latitud != null &&
+        asignacion.incidente?.longitud != null;
+    if (!tieneUbicacion) return const SizedBox.shrink();
+
+    return OutlinedButton.icon(
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => MapaClienteScreen(asignacion: asignacion),
+        ),
+      ),
+      icon: const Icon(Icons.map_outlined),
+      label: const Text('Ver ubicación del cliente'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        foregroundColor: AppTheme.primario,
+        side: const BorderSide(color: AppTheme.primario),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+
 // --- Botones de acción según estado ---
 class _BotonesAccion extends StatelessWidget {
   final AsignacionServicio asignacion;
@@ -171,7 +224,7 @@ class _BotonesAccion extends StatelessWidget {
     final cubit = context.read<AsignacionCubit>();
 
     return switch (asignacion.estado) {
-      EstadoAsignacion.aceptada => FilledButton.icon(
+      EstadoAsignacion.tallerAsignado => FilledButton.icon(
           onPressed: () =>
               cubit.avanzarEstado(asignacion.id, EstadoAsignacion.enCamino),
           icon: const Icon(Icons.directions_car),
@@ -182,10 +235,9 @@ class _BotonesAccion extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12)),
           ),
         ),
-
       EstadoAsignacion.enCamino => FilledButton.icon(
           onPressed: () =>
-              cubit.avanzarEstado(asignacion.id, EstadoAsignacion.enServicio),
+              cubit.avanzarEstado(asignacion.id, EstadoAsignacion.enAtencion),
           icon: const Icon(Icons.build),
           label: const Text('Iniciar servicio'),
           style: FilledButton.styleFrom(
@@ -195,8 +247,7 @@ class _BotonesAccion extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12)),
           ),
         ),
-
-      EstadoAsignacion.enServicio => FilledButton.icon(
+      EstadoAsignacion.enAtencion => FilledButton.icon(
           onPressed: () =>
               _mostrarDialogoServicio(context, cubit, asignacion.id),
           icon: const Icon(Icons.task_alt),

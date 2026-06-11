@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -10,6 +13,7 @@ from app.schemas.asignacion_servicio import (
     AsignacionRead,
     AsignacionRechazar,
     AsignacionEstadoUpdate,
+    AsignacionAsignarMecanico,
 )
 from app.crud.asignacion_servicio import (
     crear_asignacion,
@@ -24,6 +28,7 @@ from app.crud.incidente import get_incidente_por_id, marcar_no_disponible
 from app.core.dependencies import (
     get_current_administrador,
     get_current_mecanico,
+    get_current_usuario,
 )
 from app.services.bitacora import BitacoraService
 from app.models.incidente import EstadoIncidente
@@ -58,20 +63,46 @@ def crear_nueva_asignacion(
     if incidente.estado != EstadoIncidente.disponible:
         raise HTTPException(status_code=400, detail="El incidente no está disponible")
 
-    # Verificar que el mecánico pertenece al taller del admin
-    taller_id = usuario.perfil_administrador.taller_id
-    mecanico = db.query(Mecanico).filter(
-        Mecanico.id == datos.mecanico_id,
-        Mecanico.taller_id == taller_id
-    ).first()
-    if not mecanico:
-        raise HTTPException(
-            status_code=403,
-            detail="El mecánico no pertenece a tu taller"
-        )
+    admin_perfil = usuario.perfil_administrador
+    taller_id = admin_perfil.taller_id
+
+    # Verificar mecánico solo si se proporcionó uno
+    if datos.mecanico_id is not None:
+        mecanico = db.query(Mecanico).filter(
+            Mecanico.id == datos.mecanico_id,
+            Mecanico.taller_id == taller_id
+        ).first()
+        if not mecanico:
+            raise HTTPException(
+                status_code=403,
+                detail="El mecánico no pertenece a tu taller"
+            )
 
     asignacion = crear_asignacion(db, datos)
+
+    # Vincular la asignación al tenant del admin para que sea visible en el listado
+    if admin_perfil.tenant_id and asignacion.tenant_id is None:
+        asignacion.tenant_id = admin_perfil.tenant_id
+        db.commit()
+        db.refresh(asignacion)
+
     marcar_no_disponible(db, incidente)
+
+    # ── Notificar al cliente: su incidente fue aceptado por un taller ────
+    # (este es el flujo que usa el botón "Aceptar" de Solicitudes disponibles)
+    try:
+        if incidente.cliente:
+            notificar_cliente_cambio_estado(
+                db=db,
+                cliente_usuario_id=incidente.cliente.usuario_id,
+                incidente_id=incidente.id,
+                mensaje="¡Tu incidente fue aceptado por un taller! Pronto te asignarán un mecánico.",
+                tipo="estado_asignacion",
+            )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error enviando push al cliente: {e}")
+    # ─────────────────────────────────────────────────────────────────────
 
     BitacoraService.registrar(
         db=db,
@@ -89,15 +120,119 @@ def listar_asignaciones(
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
-    taller_id = usuario.perfil_administrador.taller_id
+    admin_perfil = usuario.perfil_administrador
+    taller_id = admin_perfil.taller_id
+    tenant_id = admin_perfil.tenant_id
 
-    return (
+    q = db.query(AsignacionServicio).outerjoin(AsignacionServicio.mecanico)
+
+    if tenant_id:
+        # Incluye asignaciones vinculadas al tenant (pueden no tener mecánico aún)
+        # y también las antiguas donde el mecánico es de este taller
+        q = q.filter(
+            or_(
+                AsignacionServicio.tenant_id == tenant_id,
+                Mecanico.taller_id == taller_id,
+            )
+        )
+    else:
+        q = q.filter(Mecanico.taller_id == taller_id)
+
+    return q.order_by(AsignacionServicio.fecha_creacion.desc()).all()
+
+
+# ADMIN — asignar (o reasignar) un mecánico a una asignación aceptada
+@router.patch("/{asignacion_id}/asignar-mecanico", response_model=AsignacionRead)
+def asignar_mecanico_a_asignacion(
+    asignacion_id: int,
+    datos: AsignacionAsignarMecanico,
+    usuario: Usuario = Depends(get_current_administrador),
+    db: Session = Depends(get_db),
+):
+    """
+    Asigna un mecánico del taller a una asignación existente.
+    Si la asignación estaba 'pendiente' pasa a 'taller_asignado'
+    y se notifica al cliente por push.
+    """
+    admin_perfil = usuario.perfil_administrador
+    taller_id = admin_perfil.taller_id
+    tenant_id = admin_perfil.tenant_id
+
+    q = (
         db.query(AsignacionServicio)
-        .join(AsignacionServicio.mecanico)
-        .filter(Mecanico.taller_id == taller_id)
-        .order_by(AsignacionServicio.fecha_creacion.desc())
-        .all()
+        .outerjoin(AsignacionServicio.mecanico)
+        .filter(AsignacionServicio.id == asignacion_id)
     )
+    if tenant_id:
+        q = q.filter(
+            or_(
+                AsignacionServicio.tenant_id == tenant_id,
+                Mecanico.taller_id == taller_id,
+            )
+        )
+    else:
+        q = q.filter(Mecanico.taller_id == taller_id)
+
+    asignacion = q.first()
+    if not asignacion:
+        raise HTTPException(
+            status_code=404,
+            detail="Asignación no encontrada o no pertenece a tu taller"
+        )
+
+    if asignacion.estado not in (EstadoAsignacion.pendiente, EstadoAsignacion.taller_asignado):
+        raise HTTPException(
+            status_code=400,
+            detail=f"No puedes asignar mecánico a una asignación en estado '{asignacion.estado.value}'"
+        )
+
+    mecanico = db.query(Mecanico).filter(
+        Mecanico.id == datos.mecanico_id,
+        Mecanico.taller_id == taller_id
+    ).first()
+    if not mecanico:
+        raise HTTPException(
+            status_code=403,
+            detail="El mecánico no pertenece a tu taller"
+        )
+
+    asignacion.mecanico_id = mecanico.id
+    if asignacion.estado == EstadoAsignacion.pendiente:
+        asignacion.estado = EstadoAsignacion.taller_asignado
+    if asignacion.fecha_respuesta is None:
+        asignacion.fecha_respuesta = datetime.utcnow()
+    db.commit()
+    db.refresh(asignacion)
+
+    # ── Notificar al cliente: mecánico asignado ──────────────────────────
+    try:
+        incidente = get_incidente_por_id(db, asignacion.incidente_id)
+        if incidente and incidente.cliente:
+            nombre_mecanico = (
+                f"{mecanico.usuario.nombre} {mecanico.usuario.apellido}"
+                if mecanico.usuario else "un mecánico"
+            )
+            notificar_cliente_cambio_estado(
+                db=db,
+                cliente_usuario_id=incidente.cliente.usuario_id,
+                incidente_id=incidente.id,
+                mensaje=f"Se te asignó el mecánico {nombre_mecanico}. Pronto estará en camino.",
+                tipo="estado_asignacion",
+            )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error enviando push al cliente: {e}")
+    # ─────────────────────────────────────────────────────────────────────
+
+    BitacoraService.registrar(
+        db=db,
+        usuario_id=usuario.id,
+        accion="ASIGNAR_MECANICO",
+        descripcion=f"Mecánico #{mecanico.id} asignado a asignación #{asignacion_id}",
+        entidad_afectada="asignacion",
+    )
+
+    return asignacion
 
 
 # MECÁNICO — ver mis asignaciones
@@ -312,24 +447,38 @@ async def cambiar_estado_asignacion(
     return asignacion_actualizada
 
 
-# COMPARTIDO — obtener una asignación por ID
+# COMPARTIDO — obtener una asignación por ID (admin del taller o mecánico dueño)
 @router.get("/{asignacion_id}", response_model=AsignacionRead)
 def obtener_asignacion(
     asignacion_id: int,
-    usuario: Usuario = Depends(get_current_administrador),
+    usuario: Usuario = Depends(get_current_usuario),
     db: Session = Depends(get_db),
 ):
-    taller_id = usuario.perfil_administrador.taller_id
-
-    asignacion = (
-        db.query(AsignacionServicio)
-        .join(AsignacionServicio.mecanico)
-        .filter(
-            AsignacionServicio.id == asignacion_id,
-            Mecanico.taller_id == taller_id
-        )
-        .first()
-    )
+    asignacion = get_asignacion_por_id(db, asignacion_id)
     if not asignacion:
-        raise HTTPException(status_code=404, detail="Asignación no encontrada o no pertenece a tu taller")
-    return asignacion
+        raise HTTPException(status_code=404, detail="Asignación no encontrada")
+
+    rol = usuario.rol.value
+
+    # Mecánico: solo puede ver SUS asignaciones
+    if rol == "mecanico":
+        if not usuario.perfil_mecanico or asignacion.mecanico_id != usuario.perfil_mecanico.id:
+            raise HTTPException(status_code=403, detail="Esta asignación no es tuya")
+        return asignacion
+
+    # Administrador: solo asignaciones de su taller/tenant
+    if rol == "administrador":
+        admin_perfil = usuario.perfil_administrador
+        es_del_tenant = (
+            admin_perfil.tenant_id is not None
+            and asignacion.tenant_id == admin_perfil.tenant_id
+        )
+        es_del_taller = (
+            asignacion.mecanico is not None
+            and asignacion.mecanico.taller_id == admin_perfil.taller_id
+        )
+        if not (es_del_tenant or es_del_taller):
+            raise HTTPException(status_code=403, detail="Esta asignación no pertenece a tu taller")
+        return asignacion
+
+    raise HTTPException(status_code=403, detail="No autorizado")

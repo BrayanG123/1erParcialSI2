@@ -37,13 +37,13 @@ class AsignacionService {
   Future<AsignacionServicio> avanzarEstado(int id, EstadoAsignacion nuevoEstado) async {
     final estadoStr = switch (nuevoEstado) {
       EstadoAsignacion.enCamino   => 'en_camino',
-      EstadoAsignacion.enServicio => 'en_servicio',
-      EstadoAsignacion.completada => 'completada',
+      EstadoAsignacion.enAtencion => 'en_atencion',
+      EstadoAsignacion.finalizado => 'finalizado',
       _                           => nuevoEstado.name,
     };
     try {
       final response = await _dio.patch(
-        '${ApiConstants.asignaciones}/$id',
+        '${ApiConstants.asignaciones}/$id/estado',
         data: {'estado': estadoStr},
       );
       return AsignacionServicio.fromJson(response.data as Map<String, dynamic>);

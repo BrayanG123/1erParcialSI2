@@ -63,7 +63,7 @@ async def websocket_incidente(
         → Respuesta: {"tipo": "pong"}
 
     Mensajes que el mecánico puede enviar:
-        {"tipo": "ubicacion", "lat": -17.39, "lng": -66.15}
+        {"tipo": "ubicacion", "lat": -17.78, "lng": -63.18}
         → El servidor guarda la posición y hace broadcast a los demás
 
     Mensajes que el servidor emite (broadcast a todos):

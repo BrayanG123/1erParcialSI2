@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:movil/config/routes.dart';
 import 'package:movil/config/theme.dart';
 import 'package:movil/features/auth/bloc/auth_cubit.dart';
@@ -39,6 +40,11 @@ class _HomeMecanicoView extends StatelessWidget {
       appBar: AppBar(
         title: Text('Hola, $nombre'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Mi perfil',
+            onPressed: () => context.pushNamed(AppRoutes.perfil),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Cerrar sesión',
@@ -91,14 +97,15 @@ class _HomeMecanicoView extends StatelessWidget {
               // Separa activas e historial (el mecánico no gestiona el estado 'pendiente')
               final activas = state.asignaciones
                   .where((a) =>
-                      a.estado == EstadoAsignacion.aceptada ||
+                      a.estado == EstadoAsignacion.tallerAsignado ||
                       a.estado == EstadoAsignacion.enCamino ||
-                      a.estado == EstadoAsignacion.enServicio)
+                      a.estado == EstadoAsignacion.enAtencion)
                   .toList();
               final historial = state.asignaciones
                   .where((a) =>
-                      a.estado == EstadoAsignacion.completada ||
-                      a.estado == EstadoAsignacion.cancelada)
+                      a.estado == EstadoAsignacion.finalizado ||
+                      a.estado == EstadoAsignacion.cancelado ||
+                      a.estado == EstadoAsignacion.rechazada)
                   .toList();
 
               return ListView(
@@ -109,9 +116,9 @@ class _HomeMecanicoView extends StatelessWidget {
                     ...activas.map(
                       (a) => _TarjetaAsignacion(
                         asignacion: a,
-                        onTap: () => context.push(
+                        onTap: () => context.pushNamed(
                           AppRoutes.detalleAsignacion,
-                          extra: a.id,
+                          pathParameters: {'id': a.id.toString()},
                         ),
                       ),
                     ),
@@ -121,9 +128,9 @@ class _HomeMecanicoView extends StatelessWidget {
                     ...historial.map(
                       (a) => _TarjetaAsignacion(
                         asignacion: a,
-                        onTap: () => context.push(
+                        onTap: () => context.pushNamed(
                           AppRoutes.detalleAsignacion,
-                          extra: a.id,
+                          pathParameters: {'id': a.id.toString()},
                         ),
                       ),
                     ),
@@ -171,23 +178,25 @@ class _TarjetaAsignacion extends StatelessWidget {
   });
 
   static const _colores = {
-    EstadoAsignacion.pendiente:   AppTheme.advertencia,
-    EstadoAsignacion.aceptada:    AppTheme.primarioClaro,
-    EstadoAsignacion.enCamino:    AppTheme.primario,
-    EstadoAsignacion.enServicio:  AppTheme.acento,
-    EstadoAsignacion.completada:  AppTheme.exito,
-    EstadoAsignacion.rechazada:   AppTheme.textoSecundario,
-    EstadoAsignacion.cancelada:   AppTheme.peligro,
+    EstadoAsignacion.pendiente:      AppTheme.advertencia,
+    EstadoAsignacion.buscandoTaller: AppTheme.advertencia,
+    EstadoAsignacion.tallerAsignado: AppTheme.primarioClaro,
+    EstadoAsignacion.enCamino:       AppTheme.primario,
+    EstadoAsignacion.enAtencion:     AppTheme.acento,
+    EstadoAsignacion.finalizado:     AppTheme.exito,
+    EstadoAsignacion.rechazada:      AppTheme.textoSecundario,
+    EstadoAsignacion.cancelado:      AppTheme.peligro,
   };
 
   static const _etiquetas = {
-    EstadoAsignacion.pendiente:   'Pendiente',
-    EstadoAsignacion.aceptada:    'Aceptada',
-    EstadoAsignacion.enCamino:    'En camino',
-    EstadoAsignacion.enServicio:  'En servicio',
-    EstadoAsignacion.completada:  'Completada',
-    EstadoAsignacion.rechazada:   'Rechazada',
-    EstadoAsignacion.cancelada:   'Cancelada',
+    EstadoAsignacion.pendiente:      'Pendiente',
+    EstadoAsignacion.buscandoTaller: 'Buscando taller',
+    EstadoAsignacion.tallerAsignado: 'Taller Asignado',
+    EstadoAsignacion.enCamino:       'En camino',
+    EstadoAsignacion.enAtencion:     'En servicio',
+    EstadoAsignacion.finalizado:     'Finalizado',
+    EstadoAsignacion.rechazada:      'Rechazada',
+    EstadoAsignacion.cancelado:      'Cancelado',
   };
 
   @override
@@ -204,21 +213,47 @@ class _TarjetaAsignacion extends StatelessWidget {
           backgroundColor: color.withValues(alpha:  0.15),
           child: Icon(Icons.build_circle, color: color),
         ),
-        title: Text('Solicitud #${asignacion.id}'),
+        // Título: descripción del problema (si el backend la envía)
+        title: Text(
+          asignacion.incidente?.descripcion ?? 'Solicitud #${asignacion.id}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Incidente #${asignacion.incidenteId}',
+              'Solicitud #${asignacion.id} • Incidente #${asignacion.incidenteId}',
               style: const TextStyle(fontSize: 12),
             ),
-            if (asignacion.distanciaKm != null)
-              Text(
-                '${asignacion.distanciaKm!.toStringAsFixed(1)} km',
-                style: const TextStyle(fontSize: 12),
-              ),
+            Row(
+              children: [
+                if (asignacion.incidente != null) ...[
+                  const Icon(Icons.schedule,
+                      size: 12, color: AppTheme.textoSecundario),
+                  const SizedBox(width: 3),
+                  Text(
+                    DateFormat('dd/MM/yyyy HH:mm')
+                        .format(asignacion.incidente!.fechaHora.toLocal()),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+                if (asignacion.distanciaKm != null) ...[
+                  const SizedBox(width: 8),
+                  const Icon(Icons.near_me,
+                      size: 12, color: AppTheme.textoSecundario),
+                  const SizedBox(width: 3),
+                  Text(
+                    '${asignacion.distanciaKm!.toStringAsFixed(1)} km',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
+        isThreeLine: true,
         trailing: Chip(
           label: Text(
             etiqueta,
