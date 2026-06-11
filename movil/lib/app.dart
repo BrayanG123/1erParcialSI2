@@ -6,6 +6,7 @@ import 'package:movil/features/auth/bloc/auth_cubit.dart';
 import 'package:movil/core/services/push_notification_service.dart'; 
 import 'package:movil/features/cliente/services/sincronizacion_service.dart';
 
+import 'package:movil/features/auth/bloc/auth_state.dart';
 
 class AuxilioApp extends StatefulWidget {
   const AuxilioApp({super.key});
@@ -25,11 +26,11 @@ class _AuxilioAppState extends State<AuxilioApp> {
     _sincronizacion.iniciar();
 
     // Inicializar FCM después del primer frame para tener BuildContext disponible
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        PushNotificationService().inicializar(context);
-      }
-    });
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (mounted) {
+    //     PushNotificationService().inicializar(context);
+    //   }
+    // });
   }
 
   @override
@@ -40,12 +41,30 @@ class _AuxilioAppState extends State<AuxilioApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'AuxilioVehicular',
-      theme: AppTheme.theme,
-      routerConfig: appRouter,
-      debugShowCheckedModeBanner: false,
+    return BlocProvider(
+      create: (_) => AuthCubit()..verificarSesion(),
+      child: BlocListener<AuthCubit, AuthState>(
+        listener: (context, state) {
+          // Solo registrar el token FCM cuando el usuario ya está autenticado
+          if (state is AuthAuthenticated) {
+            PushNotificationService().inicializar(context);
+          }
+        },
+        child: MaterialApp.router(
+          title: 'AuxilioVehicular',
+          theme: AppTheme.light,
+          routerConfig: appRouter,
+          debugShowCheckedModeBanner: false,
+        ),
+      ),
     );
+    
+    // return MaterialApp.router(
+    //   title: 'AuxilioVehicular',
+    //   theme: AppTheme.light,
+    //   routerConfig: appRouter,
+    //   debugShowCheckedModeBanner: false,
+    // );
   }
 }
 

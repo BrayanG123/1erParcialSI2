@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     VAPID_PRIVATE_KEY: str = ""
     VAPID_CLAIM_EMAIL: str = "admin@auxilio-vehicular.com"
 
+    # Stripe
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+
     # indicar a pydantic donde esta el .env
     model_config = SettingsConfigDict(
         env_file=Path(__file__).parent.parent / ".env",

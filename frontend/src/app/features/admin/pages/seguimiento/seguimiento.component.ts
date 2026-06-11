@@ -42,9 +42,9 @@ const iconoMecanico = L.icon({
 });
 
 
-// Coordenadas de Cochabamba como centro por defecto del mapa
-const COCHABAMBA_LAT = -17.3895;
-const COCHABAMBA_LNG = -66.1540;
+// Coordenadas de Santa Cruz de la Sierra como centro por defecto del mapa
+const SANTA_CRUZ_LAT = -17.7833;
+const SANTA_CRUZ_LNG = -63.1812;
 
 
 @Component({
@@ -242,7 +242,7 @@ export class SeguimientoComponent implements OnInit {
     this.destruirMapa();
 
     this.mapa = L.map('mapa-seguimiento', {
-      center: [COCHABAMBA_LAT, COCHABAMBA_LNG],
+      center: [SANTA_CRUZ_LAT, SANTA_CRUZ_LNG],
       zoom: 14,
     });
 

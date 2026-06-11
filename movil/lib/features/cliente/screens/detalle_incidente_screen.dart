@@ -374,7 +374,7 @@ class _CardAsignacion extends StatelessWidget {
 
             // ── NUEVO: botón de tracking ───────────────────────────────────────────
             if (asignacion?.estado == EstadoAsignacion.enCamino ||
-                asignacion?.estado == EstadoAsignacion.enServicio) ...[
+                asignacion?.estado == EstadoAsignacion.enAtencion) ...[
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -416,13 +416,14 @@ class _ChipEstado extends StatelessWidget {
 
   (Color, String) get _info {
     return switch (estado) {
-      EstadoAsignacion.pendiente  => (AppTheme.advertencia, 'Pendiente'),
-      EstadoAsignacion.aceptada   => (AppTheme.primario,    'Aceptada'),
-      EstadoAsignacion.rechazada  => (AppTheme.peligro,     'Rechazada'),
-      EstadoAsignacion.enCamino   => (AppTheme.primario,    'En camino'),
-      EstadoAsignacion.enServicio => (AppTheme.exito,       'En servicio'),
-      EstadoAsignacion.completada => (AppTheme.exito,       'Completada'),
-      EstadoAsignacion.cancelada  => (AppTheme.peligro,     'Cancelada'),
+      EstadoAsignacion.pendiente      => (AppTheme.advertencia, 'Pendiente'),
+      EstadoAsignacion.buscandoTaller => (AppTheme.advertencia, 'Buscando taller'),
+      EstadoAsignacion.tallerAsignado => (AppTheme.primario,    'Taller asignado'),
+      EstadoAsignacion.rechazada      => (AppTheme.peligro,     'Rechazada'),
+      EstadoAsignacion.enCamino       => (AppTheme.primario,    'En camino'),
+      EstadoAsignacion.enAtencion     => (AppTheme.exito,       'En servicio'),
+      EstadoAsignacion.finalizado     => (AppTheme.exito,       'Completada'),
+      EstadoAsignacion.cancelado      => (AppTheme.peligro,     'Cancelada'),
     };
   }
 
@@ -444,10 +445,10 @@ class _BarraProgreso extends StatelessWidget {
   const _BarraProgreso({required this.estado});
 
   static const _pasos = [
-    (EstadoAsignacion.aceptada,   'Aceptada'),
-    (EstadoAsignacion.enCamino,   'En camino'),
-    (EstadoAsignacion.enServicio, 'Trabajando'),
-    (EstadoAsignacion.completada, 'Listo'),
+    (EstadoAsignacion.tallerAsignado, 'Asignado'),
+    (EstadoAsignacion.enCamino,       'En camino'),
+    (EstadoAsignacion.enAtencion,     'Trabajando'),
+    (EstadoAsignacion.finalizado,     'Listo'),
   ];
 
   int get _indiceActual {

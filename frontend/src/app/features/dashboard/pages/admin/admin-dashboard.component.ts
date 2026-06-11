@@ -254,13 +254,13 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
     // Si ya hay un mapa, quitarlo primero
     this.mapa?.remove();
 
-    // Calcular el centro del mapa (promedio de las zonas, o Cochabamba por defecto)
+    // Calcular el centro del mapa (promedio de las zonas, o Santa Cruz por defecto)
     const centroLat = zonas.length > 0
       ? zonas.reduce((s, z) => s + z.lat, 0) / zonas.length
-      : -17.3895;
+      : -17.7833;
     const centroLng = zonas.length > 0
       ? zonas.reduce((s, z) => s + z.lng, 0) / zonas.length
-      : -66.1540;
+      : -63.1812;
 
     this.mapa = L.map(this.contenedorMapa.nativeElement, {
       center: [centroLat, centroLng],

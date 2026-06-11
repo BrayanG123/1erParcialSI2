@@ -2,8 +2,8 @@
 seed_data.py — Seeding masivo para el sistema de auxilio vehicular.
 
 Genera:
-  - 2 tenants
-  - 20 talleres (10 por tenant), 40 admins (2 por taller), 100 mecánicos (5 por taller)
+  - 20 talleres, cada uno con su PROPIO tenant (relación 1 a 1, igual que producción)
+  - 40 admins (2 por taller), 100 mecánicos (5 por taller)
   - 500 clientes con 1-2 vehículos cada uno
   - 2000 incidentes históricos (últimos 6 meses)
     - 65% completados (flujo completo: asignacion → servicio → pago → comision → calificacion)
@@ -46,9 +46,9 @@ from app.models.calificacion import Calificacion
 # CONSTANTES
 # ─────────────────────────────────────────────────────────────
 
-# Coordenadas centrales — Cochabamba, Bolivia
-LAT_CENTRO = -17.3895
-LNG_CENTRO = -66.1540
+# Coordenadas centrales — Santa Cruz de la Sierra, Bolivia
+LAT_CENTRO = -17.7833
+LNG_CENTRO = -63.1812
 
 # Contraseña única para todos los usuarios del seed (más rápido hashear una sola vez)
 PASSWORD_HASH = hash_password("Test1234")
@@ -198,7 +198,7 @@ def sumar_minutos(base: datetime, min_min: int, max_min: int) -> datetime:
 
 def crear_categorias(db: Session) -> dict[str, Categoria]:
     """Crea las categorías de incidente si no existen. Retorna dict {nombre: objeto}."""
-    print("\n[1/5] Creando categorías...")
+    print("\n[1/4] Creando categorías...")
     categorias = {}
     for data in CATEGORIAS_DATA:
         cat = db.query(Categoria).filter(Categoria.nombre == data["nombre"]).first()
@@ -215,141 +215,125 @@ def crear_categorias(db: Session) -> dict[str, Categoria]:
 
 
 # ─────────────────────────────────────────────────────────────
-# SECCIÓN 2 — TENANTS
+# SECCIÓN 2 — TENANTS + TALLERES, ADMINS Y MECÁNICOS
+# (relación 1 a 1: cada taller tiene su propio tenant,
+#  igual que el flujo de producción en crud/taller.py)
 # ─────────────────────────────────────────────────────────────
 
-def crear_tenants(db: Session) -> list[Tenant]:
-    """Crea 2 tenants de prueba si no existen."""
-    print("\n[2/5] Creando tenants...")
-    tenants_data = [
-        {"nombre": "Auxilio Norte",     "plan": PlanTenant.profesional},
-        {"nombre": "Mecánicos Express", "plan": PlanTenant.basico},
-    ]
-    tenants = []
-    for data in tenants_data:
-        t = db.query(Tenant).filter(Tenant.nombre == data["nombre"]).first()
-        if not t:
-            t = Tenant(nombre=data["nombre"], plan=data["plan"], activo=True)
-            db.add(t)
-            db.flush()
-            print(f"  [+] Tenant: {t.nombre} (id={t.id})")
-        else:
-            print(f"  [=] Tenant ya existe: {t.nombre} (id={t.id})")
-        tenants.append(t)
-    return tenants
-
-
-
-# ─────────────────────────────────────────────────────────────
-# SECCIÓN 3 — TALLERES, ADMINS Y MECÁNICOS
-# ─────────────────────────────────────────────────────────────
-
-def crear_talleres_y_personal(
-    db: Session, tenants: list[Tenant]
-) -> dict[int, list[Mecanico]]:
+def crear_talleres_y_personal(db: Session) -> dict[int, list[Mecanico]]:
     """
-    Crea 10 talleres por tenant (20 total), 2 admins y 5 mecánicos por taller.
+    Crea 20 talleres, cada uno con su PROPIO tenant (1 tenant = 1 taller),
+    2 admins y 5 mecánicos por taller.
     Retorna dict {taller_id: [lista de mecánicos]}.
     """
-    print("\n[3/5] Creando talleres, admins y mecánicos...")
+    print("\n[2/4] Creando tenants y talleres (1 tenant por taller)...")
     mecanicos_por_taller: dict[int, list[Mecanico]] = {}
 
-    taller_global_idx = 0  # índice único para nombres y usernames
+    NUM_TALLERES = 20
 
-    for tenant in tenants:
-        print(f"  Tenant: {tenant.nombre}")
+    for idx in range(1, NUM_TALLERES + 1):
+        nombre_base   = TALLERES_NOMBRES[(idx - 1) % len(TALLERES_NOMBRES)]
+        nombre_taller = f"{nombre_base} T{idx}"
 
-        for i in range(10):
-            taller_global_idx += 1
-            nombre_taller = f"{TALLERES_NOMBRES[i]} T{taller_global_idx}"
-
-            # Verificar si ya existe
-            taller_existente = (
-                db.query(Taller).filter(Taller.nombre == nombre_taller).first()
+        # Verificar si ya existe (idempotencia)
+        taller_existente = (
+            db.query(Taller).filter(Taller.nombre == nombre_taller).first()
+        )
+        if taller_existente:
+            print(f"  [=] Taller ya existe: {nombre_taller}")
+            mecanicos_existentes = (
+                db.query(Mecanico)
+                .filter(Mecanico.taller_id == taller_existente.id)
+                .all()
             )
-            if taller_existente:
-                print(f"    [=] Taller ya existe: {nombre_taller}")
-                mecanicos_existentes = (
-                    db.query(Mecanico)
-                    .filter(Mecanico.taller_id == taller_existente.id)
-                    .all()
-                )
-                mecanicos_por_taller[taller_existente.id] = mecanicos_existentes
-                continue
+            mecanicos_por_taller[taller_existente.id] = mecanicos_existentes
+            continue
 
-            lat, lng = coords_aleatorias(radio=0.12)
-            taller = Taller(
+        # ── Tenant 1:1 — mismo nombre que el taller (igual que producción) ──
+        tenant = db.query(Tenant).filter(Tenant.nombre == nombre_taller).first()
+        if not tenant:
+            tenant = Tenant(
                 nombre=nombre_taller,
-                direccion=f"Calle Seed {taller_global_idx}, Zona {i+1}",
-                telefono=f"7{random.randint(1000000, 9999999)}",
-                latitud=lat,
-                longitud=lng,
-                calificacion_promedio=round(random.uniform(3.5, 5.0), 1),
-                is_active=True,
-                tenant_id=tenant.id,
+                plan=random.choice(
+                    [PlanTenant.basico, PlanTenant.profesional, PlanTenant.enterprise]
+                ),
+                activo=True,
             )
-            db.add(taller)
+            db.add(tenant)
             db.flush()
 
-            # Crear 2 administradores por taller
-            for a in range(2):
-                username_admin = f"adm_t{taller_global_idx}_a{a}"
-                email_admin    = f"adm{taller_global_idx}{a}@seed.com"
+        lat, lng = coords_aleatorias(radio=0.12)
+        taller = Taller(
+            nombre=nombre_taller,
+            direccion=f"Calle Seed {idx}, Zona {idx}",
+            telefono=f"7{random.randint(1000000, 9999999)}",
+            latitud=lat,
+            longitud=lng,
+            calificacion_promedio=round(random.uniform(3.5, 5.0), 1),
+            is_active=True,
+            tenant_id=tenant.id,
+        )
+        db.add(taller)
+        db.flush()
 
-                u_admin = Usuario(
-                    nombre=f"Admin{taller_global_idx}",
-                    apellido=f"Taller{a}",
-                    email=email_admin,
-                    username=username_admin,
-                    password_hash=PASSWORD_HASH,
-                    rol=RolUsuario.administrador,
-                )
-                db.add(u_admin)
-                db.flush()
+        # Crear 2 administradores por taller
+        for a in range(2):
+            username_admin = f"adm_t{idx}_a{a}"
+            email_admin    = f"adm{idx}{a}@seed.com"
 
-                perfil_admin = Administrador(
-                    usuario_id=u_admin.id,
-                    taller_id=taller.id,
-                    tenant_id=tenant.id,
-                )
-                db.add(perfil_admin)
+            u_admin = Usuario(
+                nombre=f"Admin{idx}",
+                apellido=f"Taller{a}",
+                email=email_admin,
+                username=username_admin,
+                password_hash=PASSWORD_HASH,
+                rol=RolUsuario.administrador,
+            )
+            db.add(u_admin)
+            db.flush()
 
-            # Crear 5 mecánicos por taller
-            mecanicos_del_taller = []
-            for m in range(5):
-                username_mec = f"mec_t{taller_global_idx}_m{m}"
-                email_mec    = f"mec{taller_global_idx}{m}@seed.com"
-                lat_m, lng_m = coords_aleatorias(radio=0.05)
+            perfil_admin = Administrador(
+                usuario_id=u_admin.id,
+                taller_id=taller.id,
+                tenant_id=tenant.id,
+            )
+            db.add(perfil_admin)
 
-                u_mec = Usuario(
-                    nombre=f"Mecánico{taller_global_idx}",
-                    apellido=f"Num{m}",
-                    email=email_mec,
-                    username=username_mec,
-                    password_hash=PASSWORD_HASH,
-                    rol=RolUsuario.mecanico,
-                )
-                db.add(u_mec)
-                db.flush()
+        # Crear 5 mecánicos por taller
+        mecanicos_del_taller = []
+        for m in range(5):
+            username_mec = f"mec_t{idx}_m{m}"
+            email_mec    = f"mec{idx}{m}@seed.com"
+            lat_m, lng_m = coords_aleatorias(radio=0.05)
 
-                perfil_mec = Mecanico(
-                    usuario_id=u_mec.id,
-                    taller_id=taller.id,
-                    tenant_id=tenant.id,
-                    especialidad=random.choice(ESPECIALIDADES_MECANICO),
-                    estado="disponible",
-                    latitud=lat_m,
-                    longitud=lng_m,
-                )
-                db.add(perfil_mec)
-                db.flush()
-                mecanicos_del_taller.append(perfil_mec)
+            u_mec = Usuario(
+                nombre=f"Mecánico{idx}",
+                apellido=f"Num{m}",
+                email=email_mec,
+                username=username_mec,
+                password_hash=PASSWORD_HASH,
+                rol=RolUsuario.mecanico,
+            )
+            db.add(u_mec)
+            db.flush()
 
-            mecanicos_por_taller[taller.id] = mecanicos_del_taller
-            print(f"    [+] Taller #{taller.id}: {nombre_taller} (5 mec, 2 adm)")
+            perfil_mec = Mecanico(
+                usuario_id=u_mec.id,
+                taller_id=taller.id,
+                tenant_id=tenant.id,
+                especialidad=random.choice(ESPECIALIDADES_MECANICO),
+                estado="disponible",
+                latitud=lat_m,
+                longitud=lng_m,
+            )
+            db.add(perfil_mec)
+            db.flush()
+            mecanicos_del_taller.append(perfil_mec)
 
-        db.commit()
+        mecanicos_por_taller[taller.id] = mecanicos_del_taller
+        print(f"  [+] Tenant #{tenant.id} ↔ Taller #{taller.id}: {nombre_taller} (5 mec, 2 adm)")
 
+    db.commit()
     return mecanicos_por_taller
 
 
@@ -365,7 +349,7 @@ def crear_clientes_y_vehiculos(
     Crea N clientes con 1-2 vehículos cada uno.
     Retorna lista de tuplas (cliente, [vehiculos]).
     """
-    print(f"\n[4/5] Creando {total_clientes} clientes con vehículos...")
+    print(f"\n[3/4] Creando {total_clientes} clientes con vehículos...")
 
     # Verificar cuántos clientes ya existen del seed
     ya_existen = (
@@ -461,7 +445,6 @@ def crear_incidentes_historicos(
     clientes_vehiculos: list[tuple[Cliente, list[Vehiculo]]],
     mecanicos_por_taller: dict[int, list[Mecanico]],
     categorias: dict[str, Categoria],
-    tenants: list[Tenant],
     total_incidentes: int = 2000,
 ) -> None:
     """
@@ -472,7 +455,7 @@ def crear_incidentes_historicos(
       20% cancelados  → asignación en estado cancelado
       15% disponibles → solo el incidente, sin asignación
     """
-    print(f"\n[5/5] Creando {total_incidentes} incidentes históricos...")
+    print(f"\n[4/4] Creando {total_incidentes} incidentes históricos...")
 
     # Verificar cuántos ya existen
     ya_existen = db.query(Incidente).count()
@@ -738,11 +721,10 @@ def seed(db: Session) -> None:
     print("Contraseña de todos los usuarios del seed: Test1234")
 
     categorias           = crear_categorias(db)
-    tenants              = crear_tenants(db)
-    mecanicos_por_taller = crear_talleres_y_personal(db, tenants)
+    mecanicos_por_taller = crear_talleres_y_personal(db)
     clientes_vehiculos   = crear_clientes_y_vehiculos(db)
     crear_incidentes_historicos(
-        db, clientes_vehiculos, mecanicos_por_taller, categorias, tenants
+        db, clientes_vehiculos, mecanicos_por_taller, categorias
     )
 
     print("\n" + "="*55)

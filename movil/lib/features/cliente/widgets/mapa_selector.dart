@@ -32,8 +32,8 @@ class _MapaSelectorState extends State<MapaSelector> {
   LatLng? _marcador;
   bool _cargandoGps = false;
 
-  // Centro inicial: La Paz, Bolivia
-  static const _defaultCenter = LatLng(-16.5000, -68.1500);
+  // Centro inicial: Santa Cruz de la Sierra, Bolivia
+  static const _defaultCenter = LatLng(-17.7833, -63.1812);
 
   @override
   void initState() {

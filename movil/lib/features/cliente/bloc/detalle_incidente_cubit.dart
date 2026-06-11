@@ -49,7 +49,7 @@ class DetalleIncidenteCubit extends Cubit<DetalleIncidenteState> {
 
       // Solo cargamos servicio/pago/calificación si la asignación está completada
       if (asignacion == null ||
-          asignacion.estado != EstadoAsignacion.completada) {
+          asignacion.estado != EstadoAsignacion.finalizado) {
         emit(DetalleIncidenteCargado(
             incidente: incidente, asignacion: asignacion));
         return;

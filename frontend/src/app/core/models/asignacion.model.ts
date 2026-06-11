@@ -1,6 +1,6 @@
 export interface AsignacionRequest {
   incidente_id: number;
-  mecanico_id: number;
+  mecanico_id?: number;
   notas?: string;
 }
 

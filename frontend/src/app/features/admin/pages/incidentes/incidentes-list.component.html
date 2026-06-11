@@ -30,23 +30,26 @@
   </div>
 
   <!-- @if (mostrarBannerNotif) { -->
-    <div *ngIf="mostrarBannerNotif" class="mb-4 flex items-center gap-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-      </svg>
-      <span class="flex-1">
-        <strong>¿Recibir alertas de nuevos incidentes?</strong>
-        Activa las notificaciones para saber cuando un cliente solicite auxilio, incluso si tienes otro tab abierto.
-      </span>
-      <button (click)="activarNotificaciones()"
-        class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors">
-        Activar
-      </button>
-      <button (click)="rechazarNotificaciones()"
-        class="rounded-lg border border-blue-300 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-100 transition-colors">
-        Ahora no
-      </button>
-    </div>
+  <div *ngIf="mostrarBannerNotif"
+    class="mb-4 flex items-center gap-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 shadow-sm">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-blue-600" viewBox="0 0 24 24"
+      fill="currentColor">
+      <path
+        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+    <span class="flex-1">
+      <strong>¿Recibir alertas de nuevos incidentes?</strong>
+      Activa las notificaciones para saber cuando un cliente solicite auxilio, incluso si tienes otro tab abierto.
+    </span>
+    <button (click)="activarNotificaciones()"
+      class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors">
+      Activar
+    </button>
+    <button (click)="rechazarNotificaciones()"
+      class="rounded-lg border border-blue-300 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-100 transition-colors">
+      Ahora no
+    </button>
+  </div>
   <!-- } -->
 
   <!-- Barra de Herramientas (Filtros y Buscador) -->
@@ -60,13 +63,13 @@
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
-      <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar por problema o cliente..."
+      <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="resetPagina()" placeholder="Buscar por problema o cliente..."
         class="w-full bg-transparent border-none rounded-xl pl-12 pr-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-0">
     </div>
 
     <!-- Selectores (Derecha) -->
     <div class="flex items-center gap-3 pr-2">
-      <select [(ngModel)]="filtroPrioridad"
+      <select [(ngModel)]="filtroPrioridad" (ngModelChange)="resetPagina()"
         class="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 appearance-none focus:outline-none transition-all pr-8 cursor-pointer">
         <option value="">Prioridad: Todas</option>
         <option value="Alta">Prioridad: Alta</option>
@@ -81,6 +84,15 @@
         <option value="10">Distancia: < 10km</option>
         <option value="20">Distancia: < 20km</option>
       </select>
+
+      <!-- Orden por fecha -->
+      <button (click)="toggleOrden()"
+        class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-xs font-bold text-slate-600 hover:text-indigo-600 hover:border-indigo-100 transition-all cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
+        </svg>
+        {{ ordenRecientes ? 'Más recientes' : 'Más antiguas' }}
+      </button>
     </div>
   </div>
 
@@ -104,7 +116,8 @@
       </div>
       <p class="text-slate-900 font-black text-xl">No hay solicitudes disponibles</p>
       <p class="text-slate-400 mt-2 font-medium">Intenta ajustar los filtros de búsqueda</p>
-      <button (click)="cargarDatos()" class="mt-8 px-6 py-3 bg-[#4F46E5] text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 active:scale-95 transition-all">
+      <button (click)="cargarDatos()"
+        class="mt-8 px-6 py-3 bg-[#4F46E5] text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-100 active:scale-95 transition-all">
         Actualizar lista
       </button>
     </div>
@@ -114,23 +127,28 @@
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="bg-white">
-            <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Solicitud / Problema</th>
+            <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Solicitud / Problema
+            </th>
             <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Prioridad</th>
-            <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Ubicación / Distancia</th>
-            <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Acciones</th>
+            <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Ubicación / Distancia
+            </th>
+            <th class="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Acciones
+            </th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-50">
-          <tr *ngFor="let inc of getFilteredIncidentes()" class="hover:bg-slate-50/50 transition-all group">
+          <tr *ngFor="let inc of getIncidentesPagina()" class="hover:bg-slate-50/50 transition-all group">
 
             <!-- Avatar + Problema -->
             <td class="px-8 py-6">
               <div class="flex items-center gap-4">
-                <div class="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs border border-slate-200 shadow-sm">
+                <div
+                  class="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs border border-slate-200 shadow-sm">
                   {{ inc.descripcion.substring(0,2).toUpperCase() }}
                 </div>
                 <div class="flex flex-col">
-                  <span class="text-sm font-black text-slate-800 tracking-tight">{{ inc.descripcion | slice:0:40 }}{{ inc.descripcion.length > 40 ? '...' : '' }}</span>
+                  <span class="text-sm font-black text-slate-800 tracking-tight">{{ inc.descripcion | slice:0:40 }}{{
+                    inc.descripcion.length > 40 ? '...' : '' }}</span>
                   <span class="text-xs text-slate-400 font-medium">ID #INC-{{ inc.id }}</span>
                 </div>
               </div>
@@ -138,14 +156,14 @@
 
             <!-- Prioridad (Badges Redondeados) -->
             <td class="px-8 py-6">
-              <span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm"
+              <span
+                class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm"
                 [ngClass]="{
                   'bg-red-50 text-red-600': inc.prioridad === 'Alta',
                   'bg-orange-50 text-orange-600': inc.prioridad === 'Media',
                   'bg-emerald-50 text-emerald-600': inc.prioridad === 'Baja'
                 }">
-                <span class="w-1.5 h-1.5 rounded-full mr-2"
-                  [ngClass]="{
+                <span class="w-1.5 h-1.5 rounded-full mr-2" [ngClass]="{
                     'bg-red-500': inc.prioridad === 'Alta',
                     'bg-orange-500': inc.prioridad === 'Media',
                     'bg-emerald-500': inc.prioridad === 'Baja'
@@ -159,7 +177,10 @@
               <div class="flex flex-col">
                 <span class="text-sm font-bold text-slate-700">Av. Siempre Viva {{ inc.id }}</span>
                 <span class="text-xs text-slate-400 font-medium flex items-center gap-1.5 mt-0.5">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  </svg>
                   {{ inc.distancia }} • {{ inc.tiempo }}
                 </span>
               </div>
@@ -172,31 +193,41 @@
                 <!-- Ver Detalle (Icono Circular) -->
                 <button (click)="verDetalle(inc)" title="Ver evidencias"
                   class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 transition-all shadow-sm">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
                 </button>
 
-                <!-- Aceptar con Dropdown de Asignación -->
-                <div class="relative group/actions">
-                  <button class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-100 hover:bg-emerald-600 active:scale-90 transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                  </button>
-
-                  <!-- Menú de Asignación -->
-                  <div class="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 py-3 z-50 hidden group-hover/actions:block animate-in fade-in zoom-in-95 duration-200">
-                    <div class="px-4 py-2 text-[10px] font-black text-slate-300 uppercase tracking-widest border-b border-slate-50 mb-2">Asignar mecánico</div>
-                    <button *ngFor="let m of mecanicos" (click)="asignarMecanico(inc.id, {target: {value: m.id}})"
-                      class="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center justify-between font-bold">
-                      {{ m.nombre }} {{ m.apellido }}
-                      <span class="text-[9px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full">DISPONIBLE</span>
-                    </button>
-                  </div>
-                </div>
+                <!-- Aceptar (directo, sin selección de mecánico) -->
+                <button (click)="aceptarIncidente(inc.id)" title="Aceptar solicitud"
+                  class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-100 hover:bg-emerald-600 active:scale-90 transition-all">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
 
                 <!-- Rechazar (Icono Circular Rojo) -->
                 <button (click)="rechazarIncidente(inc.id)" title="Rechazar solicitud"
                   class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-600 hover:border-red-100 hover:bg-red-50 transition-all shadow-sm">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
+
+                <!-- DEBUG: Probar notificación push al cliente (descomentár para depurar push)
+                <button (click)="probarNotificacion(inc)" [disabled]="probandoPushId === inc.id"
+                  title="Probar push al cliente (diagnóstico en consola F12)"
+                  class="w-10 h-10 rounded-xl bg-white border border-amber-200 flex items-center justify-center text-amber-500 hover:text-amber-700 hover:bg-amber-50 transition-all shadow-sm disabled:opacity-40">
+                  <svg *ngIf="probandoPushId !== inc.id" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                  </svg>
+                  <span *ngIf="probandoPushId === inc.id"
+                    class="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></span>
+                </button>
+                -->
 
               </div>
             </td>
@@ -205,13 +236,36 @@
       </table>
     </div>
 
-    <!-- Footer Estilo Premium -->
-    <div class="px-8 py-6 border-t border-slate-50 bg-slate-50/30 flex justify-between items-center">
-      <span class="text-xs font-bold text-slate-400">Mostrando 1 a {{ getFilteredIncidentes().length }} de {{ incidentesPendientes.length }} solicitudes</span>
-      <div class="flex gap-2">
-        <button class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
-        <button class="w-9 h-9 flex items-center justify-center rounded-xl border border-indigo-500 bg-indigo-50 text-indigo-600 font-black text-xs shadow-sm">1</button>
-        <button class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition-all"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+    <!-- Footer con paginación real -->
+    <div *ngIf="getFilteredIncidentes().length > 0"
+      class="px-8 py-6 border-t border-slate-50 bg-slate-50/30 flex flex-wrap justify-between items-center gap-3">
+      <span class="text-xs font-bold text-slate-400">
+        Mostrando {{ (pagina - 1) * tamanoPagina + 1 }}
+        a {{ Math.min(pagina * tamanoPagina, getFilteredIncidentes().length) }}
+        de {{ getFilteredIncidentes().length }} solicitudes
+      </span>
+      <div class="flex items-center gap-2">
+        <select [(ngModel)]="tamanoPagina" (ngModelChange)="resetPagina()"
+          class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-500 cursor-pointer">
+          <option [ngValue]="10">10 / pág</option>
+          <option [ngValue]="20">20 / pág</option>
+          <option [ngValue]="50">50 / pág</option>
+        </select>
+        <button (click)="cambiarPagina(-1)" [disabled]="pagina <= 1"
+          class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition-all disabled:opacity-40">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <span class="px-3 py-2 rounded-xl border border-indigo-500 bg-indigo-50 text-indigo-600 font-black text-xs shadow-sm">
+          {{ pagina }} / {{ totalPaginas }}
+        </span>
+        <button (click)="cambiarPagina(1)" [disabled]="pagina >= totalPaginas"
+          class="w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 transition-all disabled:opacity-40">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
     </div>
   </div>

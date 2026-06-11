@@ -20,7 +20,9 @@ from app.routers import (
     kpi,
     websocket,
     notificaciones,
-    web_push
+    web_push,
+    reporte_dinamico,
+    stripe_pago
  )
 
 
@@ -62,6 +64,8 @@ app.include_router(kpi.router)
 app.include_router(websocket.router)
 app.include_router(notificaciones.router)
 app.include_router(web_push.router)
+app.include_router(reporte_dinamico.router)
+app.include_router(stripe_pago.router)
 
 
 @app.get("/")
