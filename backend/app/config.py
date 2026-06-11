@@ -47,6 +47,17 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PUBLISHABLE_KEY: str = ""
 
+    # IA local — Ollama (generación de resúmenes con Gemma 2B)
+    OLLAMA_URL: str = "http://localhost:11434"
+    OLLAMA_MODELO: str = "gemma2:2b"
+
+    # SMTP — envío de reportes por correo (Gmail con App Password)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
+
     # indicar a pydantic donde esta el .env
     model_config = SettingsConfigDict(
         env_file=Path(__file__).parent.parent / ".env",

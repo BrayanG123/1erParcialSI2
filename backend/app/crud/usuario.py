@@ -51,7 +51,20 @@ def crear_usuario(db: Session, datos: UsuarioCreate, taller_id: Optional[int] = 
         db.add(perfil)
 
     elif datos.rol == RolUsuario.mecanico:
-        perfil = Mecanico(usuario_id=nuevo_usuario.id,taller_id=taller_id)
+        # Especialidades: acepta lista (nuevo) o string única (compatibilidad).
+        # Se guardan en la columna 'especialidad' separadas por comas.
+        especialidad_str = None
+        if getattr(datos, "especialidades", None):
+            limpias = [e.strip() for e in datos.especialidades if e and e.strip()]
+            especialidad_str = ", ".join(limpias) or None
+        elif getattr(datos, "especialidad", None):
+            especialidad_str = datos.especialidad.strip() or None
+
+        perfil = Mecanico(
+            usuario_id=nuevo_usuario.id,
+            taller_id=taller_id,
+            especialidad=especialidad_str,
+        )
         db.add(perfil)
 
     elif datos.rol == RolUsuario.administrador:

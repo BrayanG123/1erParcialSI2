@@ -1,0 +1,59 @@
+# ════════════════════════════════════════════════════════════
+# docker-compose.yml — Levanta TODO el sistema en tu máquina
+# para probar la dockerización ANTES de subir a Azure.
+#
+#   docker compose up --build      → construye y levanta todo
+#   docker compose down            → apaga todo
+#   docker compose down -v         → apaga y BORRA los datos de la BD
+#
+# Servicios:
+#   db        → PostgreSQL 16 (SOLO para pruebas locales;
+#               en Azure se usa la BD administrada, ver guía)
+#   backend   → FastAPI en http://localhost:8000
+#   frontend  → Angular+nginx en http://localhost:8080
+# ════════════════════════════════════════════════════════════
+
+services:
+
+  # ── Base de datos (solo local) ─────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: db
+    ports:
+      - "5434:5432"          # 5434 afuera para NO chocar con tu PostgreSQL local (5433)
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # los datos sobreviven a reinicios
+    healthcheck:             # el backend espera a que la BD esté lista
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend FastAPI ────────────────────────────────────────
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env       # tus claves actuales (Stripe, Groq, etc.)
+    environment:
+      # Sobrescribe la DATABASE_URL del .env para apuntar al contenedor
+      # de la BD ("db" es el nombre del servicio en esta red interna)
+      DATABASE_URL: postgresql://postgres:admin@db:5432/db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── Frontend Angular + nginx ───────────────────────────────
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

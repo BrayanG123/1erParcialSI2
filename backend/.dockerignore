@@ -1,0 +1,24 @@
+# Archivos que NO entran en la imagen Docker del backend
+
+# Entorno virtual local (¡enorme! las deps se instalan dentro de la imagen)
+venv/
+
+# Secretos: NUNCA dentro de la imagen — van como variables de entorno
+.env
+
+# Caches y basura de Python
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Carpetas que no necesita producción
+curso_fastapi/
+contexto/
+diagramaxml/
+media/
+workers/
+
+# Git / IDE
+.git/
+.gitignore
+.vscode/
