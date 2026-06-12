@@ -20,6 +20,12 @@ class UsuarioCreate(UsuarioBase):
     password: str
     rol: RolUsuario
 
+    # Solo para rol mecánico: sus especialidades (una o varias).
+    # Se acepta también 'especialidad' (singular) por compatibilidad
+    # con clientes viejos que envían una sola.
+    especialidades: Optional[list[str]] = None
+    especialidad: Optional[str] = None
+
     @field_validator("password")
     @classmethod
     def validar_password(cls, v: str) -> str:
@@ -75,13 +81,15 @@ class ClienteRead(BaseModel):
 
 class MecanicoCreate(BaseModel):
     especialidad: Optional[str] = None
+    especialidades: Optional[list[str]] = None
     telefono: Optional[str] = None
 
 
 class MecanicoRead(BaseModel):
     id: int
     usuario_id: int
-    especialidad: Optional[str]
+    especialidad: Optional[str]          # texto crudo (compatibilidad)
+    especialidades: list[str] = []       # ← la lista (leída de la property del modelo)
     estado: str
     telefono: Optional[str]
     latitud: Optional[float]
@@ -90,6 +98,19 @@ class MecanicoRead(BaseModel):
     taller: Optional[TallerRead] = None
 
     model_config = {"from_attributes": True}
+
+
+# Para actualizar las especialidades de un mecánico
+class EspecialidadesUpdate(BaseModel):
+    especialidades: list[str]
+
+    @field_validator("especialidades")
+    @classmethod
+    def validar_especialidades(cls, v: list[str]) -> list[str]:
+        limpias = [e.strip() for e in v if e and e.strip()]
+        if len(", ".join(limpias)) > 200:
+            raise ValueError("Demasiadas especialidades (máximo 200 caracteres en total)")
+        return limpias
 
 
 class AdministradorRead(BaseModel):

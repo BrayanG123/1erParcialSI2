@@ -11,8 +11,18 @@ def crear_servicio_realizado(
     asignacion_id: int,
     datos: ServicioRealizadoCreate,
 ) -> ServicioRealizado:
+    # El servicio hereda el tenant de su asignación (ruta crítica, Fase 7):
+    # sin esto, el servicio (y sus pagos/calificaciones vía JOIN) no aparece
+    # en los reportes QBE del taller.
+    asignacion = (
+        db.query(AsignacionServicio)
+        .filter(AsignacionServicio.id == asignacion_id)
+        .first()
+    )
+
     servicio = ServicioRealizado(
         asignacion_id=asignacion_id,
+        tenant_id=asignacion.tenant_id if asignacion else None,
         tipo_servicio=datos.tipo_servicio,
         descripcion_trabajo=datos.descripcion_trabajo,
         costo_final=datos.costo_final,

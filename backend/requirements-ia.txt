@@ -1,0 +1,27 @@
+# ════════════════════════════════════════════════════════════
+# Dependencias del MÓDULO DE IA (visión artificial con CLIP)
+#
+# ⚠️ NO instalar hasta que liberes recursos de tu equipo.
+#    El backend funciona perfectamente sin esto; solo el endpoint
+#    POST /ia/clasificar-imagen necesita estas librerías.
+#
+# INSTALACIÓN (con el venv activado, en este orden):
+#
+#   1. PyTorch versión CPU (NO la versión normal, que pesa 2.5 GB con CUDA):
+#      pip install torch --index-url https://download.pytorch.org/whl/cpu
+#
+#   2. El resto:
+#      pip install -r requirements-ia.txt
+#
+# Espacio en disco aproximado:
+#   torch (CPU)    ~ 600 MB instalado
+#   transformers   ~ 100 MB
+#   modelo CLIP    ~ 600 MB (se descarga solo, la 1ª vez que clasificas)
+#   TOTAL          ~ 1.3 GB
+#
+# El LLM (Gemma 2B) NO va aquí: se instala aparte con Ollama
+# (ver MODULO-IA.md, sección de instalación).
+# ════════════════════════════════════════════════════════════
+
+transformers>=4.40
+pillow>=10.0

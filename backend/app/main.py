@@ -22,7 +22,8 @@ from app.routers import (
     notificaciones,
     web_push,
     reporte_dinamico,
-    stripe_pago
+    stripe_pago,
+    ia
  )
 
 
@@ -66,6 +67,7 @@ app.include_router(notificaciones.router)
 app.include_router(web_push.router)
 app.include_router(reporte_dinamico.router)
 app.include_router(stripe_pago.router)
+app.include_router(ia.router)
 
 
 @app.get("/")

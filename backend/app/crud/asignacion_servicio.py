@@ -15,6 +15,17 @@ def crear_asignacion(db: Session, datos: AsignacionCreate) -> AsignacionServicio
         tiempo_estimado=datos.tiempo_estimado,
     )
     db.add(asignacion)
+    db.flush()
+
+    # Historial: un taller tomó el incidente (la asignación nace 'pendiente')
+    db.add(HistorialEstado(
+        asignacion_id=asignacion.id,
+        incidente_id=datos.incidente_id,
+        estado_anterior=None,
+        estado_actual=EstadoAsignacion.pendiente.value,
+        observacion="Taller aceptó el incidente y creó la asignación",
+    ))
+
     db.commit()
     db.refresh(asignacion)
     return asignacion
@@ -44,8 +55,17 @@ def get_asignaciones_de_mecanico(db: Session, mecanico_id: int) -> list[Asignaci
 
 
 def aceptar_asignacion(db: Session, asignacion: AsignacionServicio) -> AsignacionServicio:
+    estado_anterior = asignacion.estado.value if asignacion.estado else None
     asignacion.estado = EstadoAsignacion.taller_asignado
     asignacion.fecha_respuesta = datetime.utcnow()
+
+    db.add(HistorialEstado(
+        asignacion_id=asignacion.id,
+        incidente_id=asignacion.incidente_id,
+        estado_anterior=estado_anterior,
+        estado_actual=EstadoAsignacion.taller_asignado.value,
+    ))
+
     db.commit()
     db.refresh(asignacion)
     return asignacion
@@ -54,9 +74,19 @@ def aceptar_asignacion(db: Session, asignacion: AsignacionServicio) -> Asignacio
 def rechazar_asignacion(
     db: Session, asignacion: AsignacionServicio, motivo: str
 ) -> AsignacionServicio:
+    estado_anterior = asignacion.estado.value if asignacion.estado else None
     asignacion.estado = EstadoAsignacion.rechazada
     asignacion.fecha_respuesta = datetime.utcnow()
     asignacion.motivo_rechazo = motivo
+
+    db.add(HistorialEstado(
+        asignacion_id=asignacion.id,
+        incidente_id=asignacion.incidente_id,
+        estado_anterior=estado_anterior,
+        estado_actual=EstadoAsignacion.rechazada.value,
+        observacion=motivo,
+    ))
+
     db.commit()
     db.refresh(asignacion)
     return asignacion

@@ -61,4 +61,22 @@ export class AdminOpsService {
   eliminarMecanico(usuario_id: number) {
     return this.http.delete(`${this.API_URL}/admin/usuarios/${usuario_id}`);
   }
+
+  // ── Especialidades (un mecánico puede tener varias) ──
+
+  // Catálogo canónico de especialidades del sistema
+  getCatalogoEspecialidades() {
+    return this.http.get<{ especialidades: string[] }>(
+      `${this.API_URL}/usuarios/especialidades/catalogo`
+    );
+  }
+
+  // Actualiza las especialidades de un mecánico del taller.
+  // OJO: recibe el id del PERFIL mecánico (perfil_mecanico.id), no el del usuario
+  actualizarEspecialidades(mecanicoId: number, especialidades: string[]) {
+    return this.http.put<any>(
+      `${this.API_URL}/usuarios/mecanicos/${mecanicoId}/especialidades`,
+      { especialidades }
+    );
+  }
 }

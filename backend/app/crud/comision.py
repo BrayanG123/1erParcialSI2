@@ -20,6 +20,7 @@ def crear_comision(db: Session, servicio_id: int) -> Comision:
 
     comision = Comision(
         servicio_id=servicio_id,
+        tenant_id=servicio.tenant_id,   # hereda el tenant del servicio
         porcentaje=PORCENTAJE_COMISION,
         monto=monto,
     )

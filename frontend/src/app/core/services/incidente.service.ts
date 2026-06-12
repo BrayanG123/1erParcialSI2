@@ -25,4 +25,12 @@ export class IncidenteService {
     actualizarIncidente(id: number, datos: Partial<Incidente>) {
         return this.http.patch<Incidente>(`${this.API_URL}/${id}`, datos);
     }
+
+    // ADMIN: rechazar un incidente disponible (persiste en el backend:
+    // este taller deja de verlo; sigue disponible para los demás)
+    rechazarIncidente(id: number) {
+        return this.http.post<{ mensaje: string; asignacion_id: number }>(
+            `${this.API_URL}/${id}/rechazar`, {}
+        );
+    }
 }

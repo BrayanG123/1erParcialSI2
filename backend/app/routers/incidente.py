@@ -251,13 +251,87 @@ def obtener_asignacion_de_incidente(
 
 
 
-# ── ADMIN — ver incidentes disponibles (para aceptar) 
+# ── ADMIN — ver incidentes disponibles (para aceptar)
 @router.get("/disponibles", response_model=list[IncidenteRead])
 def incidentes_disponibles(
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
-    return get_incidentes_disponibles(db)
+    # Excluye los incidentes que ESTE taller ya rechazó
+    # (siguen visibles para los demás talleres)
+    tenant_id = usuario.perfil_administrador.tenant_id
+    return get_incidentes_disponibles(db, excluir_rechazados_de_tenant=tenant_id)
+
+
+# ── ADMIN — rechazar un incidente disponible ─────────────────────────────────
+@router.post("/{incidente_id}/rechazar", status_code=status.HTTP_200_OK)
+def rechazar_incidente_disponible(
+    incidente_id: int,
+    usuario: Usuario = Depends(get_current_administrador),
+    db: Session = Depends(get_db),
+):
+    """
+    El taller rechaza un incidente disponible. El rechazo SE PERSISTE:
+    se crea una AsignacionServicio en estado 'rechazada' con el tenant del
+    taller, de modo que:
+      - este taller ya no lo ve en sus Solicitudes disponibles
+      - el incidente SIGUE disponible para los demás talleres
+        (la política "considerar al siguiente taller" de la ruta crítica)
+    """
+    from datetime import datetime
+
+    from app.models.asignacion_servicio import AsignacionServicio, EstadoAsignacion
+    from app.models.historial_estado import HistorialEstado
+
+    incidente = get_incidente_por_id(db, incidente_id)
+    if not incidente:
+        raise HTTPException(status_code=404, detail="Incidente no encontrado")
+    if incidente.estado != EstadoIncidente.disponible:
+        raise HTTPException(status_code=400, detail="El incidente ya no está disponible")
+
+    admin_perfil = usuario.perfil_administrador
+    tenant_id = admin_perfil.tenant_id
+
+    # Evitar rechazos duplicados del mismo taller
+    ya_rechazado = (
+        db.query(AsignacionServicio)
+        .filter(
+            AsignacionServicio.incidente_id == incidente_id,
+            AsignacionServicio.tenant_id == tenant_id,
+            AsignacionServicio.estado == EstadoAsignacion.rechazada,
+        )
+        .first()
+    )
+    if ya_rechazado:
+        return {"mensaje": "Este taller ya había rechazado el incidente", "asignacion_id": ya_rechazado.id}
+
+    rechazo = AsignacionServicio(
+        incidente_id=incidente_id,
+        tenant_id=tenant_id,
+        estado=EstadoAsignacion.rechazada,
+        fecha_respuesta=datetime.utcnow(),
+        motivo_rechazo="Rechazado por el taller desde Solicitudes disponibles",
+    )
+    db.add(rechazo)
+    db.flush()
+
+    db.add(HistorialEstado(
+        asignacion_id=rechazo.id,
+        incidente_id=incidente_id,
+        estado_anterior=None,
+        estado_actual=EstadoAsignacion.rechazada.value,
+        observacion=f"Taller (tenant #{tenant_id}) rechazó el incidente",
+    ))
+    db.commit()
+
+    BitacoraService.registrar(
+        db=db,
+        usuario_id=usuario.id,
+        accion="RECHAZAR_INCIDENTE",
+        descripcion=f"Incidente #{incidente_id} rechazado por el taller",
+        entidad_afectada="incidente",
+    )
+    return {"mensaje": "Incidente rechazado", "asignacion_id": rechazo.id}
 
 
 # ADMIN — listar incidentes de SU taller

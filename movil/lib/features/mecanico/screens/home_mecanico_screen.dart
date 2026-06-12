@@ -35,7 +35,15 @@ class _HomeMecanicoView extends StatelessWidget {
         ? authState.usuario.nombre
         : 'Mecánico';
 
-    return Scaffold(
+    // Al cerrar sesión, AuthCubit emite AuthUnauthenticated:
+    // este listener navega al login (igual que en el home del cliente)
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state is AuthUnauthenticated) {
+          context.goNamed(AppRoutes.login);
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppTheme.fondo,
       appBar: AppBar(
         title: Text('Hola, $nombre'),
@@ -141,6 +149,7 @@ class _HomeMecanicoView extends StatelessWidget {
 
             return const SizedBox.shrink();
           },
+        ),
         ),
       ),
     );

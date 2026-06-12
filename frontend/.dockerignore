@@ -1,0 +1,13 @@
+# Archivos que NO entran en la imagen Docker del frontend
+
+# Dependencias locales (se instalan dentro de la imagen con npm ci)
+node_modules/
+
+# Builds anteriores (la imagen compila el suyo)
+dist/
+.angular/
+
+# Git / IDE
+.git/
+.gitignore
+.vscode/

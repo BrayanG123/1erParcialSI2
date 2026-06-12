@@ -66,6 +66,9 @@ class Mecanico(Base):
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), unique=True, nullable=False)
     taller_id = Column(Integer, ForeignKey("talleres.id", ondelete="SET NULL"), nullable=True) 
+    # Especialidades del mecánico: se guardan VARIAS en esta misma columna,
+    # separadas por comas (ej: "Motor y transmisión, Sistema eléctrico").
+    # La API siempre las expone como lista vía la property de abajo.
     especialidad = Column(String(200), nullable=True)
     estado = Column(String(50), default="disponible", nullable=False)
     telefono = Column(String(20), nullable=True)
@@ -87,6 +90,13 @@ class Mecanico(Base):
     taller = relationship("Taller", back_populates="mecanicos")
     tenant = relationship("Tenant",  back_populates="mecanicos")
     asignaciones = relationship("AsignacionServicio", back_populates="mecanico")
+
+    @property
+    def especialidades(self) -> list[str]:
+        """La columna 'especialidad' (texto separado por comas) como lista limpia."""
+        if not self.especialidad:
+            return []
+        return [e.strip() for e in self.especialidad.split(",") if e.strip()]
 
 
 class Administrador(Base):

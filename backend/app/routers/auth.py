@@ -129,14 +129,35 @@ def setup_taller(
         db.add(perfil_admin)
         db.flush()
 
-    # 2) Evitar duplicados
+    rol_valor = usuario.rol.value if hasattr(usuario.rol, "value") else str(usuario.rol)
+
+    # 2) Evitar duplicados — pero igual re-emitir tokens con el tenant actual
+    #    (el JWT con el que llegó aquí fue emitido ANTES de tener tenant)
     existente = get_taller_by_admin(db, perfil_admin.id)
     if existente:
-        return {"message": "El taller ya estaba configurado", "taller_id": existente.id}
+        token_data = {"sub": str(usuario.id), "rol": rol_valor, "tenant_id": existente.tenant_id}
+        return {
+            "message": "El taller ya estaba configurado",
+            "taller_id": existente.id,
+            "access_token": crear_access_token(token_data),
+            "refresh_token": crear_refresh_token(token_data),
+            "token_type": "bearer",
+        }
 
-    # 3) Crear taller
+    # 3) Crear taller (crea también su Tenant 1:1 y lo vincula al admin)
     nuevo_taller = crear_taller(db, perfil_admin.id, datos)
-    return {"message": "Taller configurado exitosamente", "taller_id": nuevo_taller.id}
+
+    # 4) CLAVE: devolver tokens NUEVOS con el tenant recién creado.
+    #    Sin esto, el frontend seguiría usando el JWT viejo (tenant_id=null)
+    #    y todos los endpoints con require_tenant (KPIs) devolverían 403.
+    token_data = {"sub": str(usuario.id), "rol": rol_valor, "tenant_id": nuevo_taller.tenant_id}
+    return {
+        "message": "Taller configurado exitosamente",
+        "taller_id": nuevo_taller.id,
+        "access_token": crear_access_token(token_data),
+        "refresh_token": crear_refresh_token(token_data),
+        "token_type": "bearer",
+    }
 
 
 # Alias de compatibilidad (si algún frontend viejo lo usa)

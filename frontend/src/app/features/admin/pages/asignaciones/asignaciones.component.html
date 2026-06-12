@@ -174,10 +174,15 @@
           </div>
           <div>
             <label class="block text-[10px] font-bold text-slate-300 uppercase mb-1">Ubicación</label>
-            <p class="text-sm font-medium text-slate-600">Av. Siempre Viva 123, Bogotá</p>
+            <p class="text-sm font-medium text-slate-600">
+              {{ tieneUbicacion
+                  ? (selectedAsignacion.incidente.latitud | number:'1.4-4') + ', ' + (selectedAsignacion.incidente.longitud | number:'1.4-4')
+                  : 'Sin coordenadas registradas' }}
+            </p>
           </div>
-          <button class="w-full py-3 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-xs hover:bg-slate-50 transition-all">
-            Abrir en mapa
+          <button (click)="abrirEnMapa()" [disabled]="!tieneUbicacion"
+            class="w-full py-3 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold text-xs hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+            📍 Abrir en mapa
           </button>
         </div>
       </div>
