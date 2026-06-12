@@ -62,3 +62,5 @@ docker-compose.override.yml
 curso_fastapi
 diagramaxml
 contexto
+
+firebase_credentials.json
