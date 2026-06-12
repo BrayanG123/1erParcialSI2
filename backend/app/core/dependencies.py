@@ -146,15 +146,20 @@ def get_cliente_o_admin(
 # DEPENDENCIAS DE TENANT  
 # ============================================================
 
-def get_tenant_id_opcional(token: str = Depends(oauth2_scheme)) -> Optional[int]:
+def get_tenant_id_opcional(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> Optional[int]:
     """
     Extrae el tenant_id del JWT sin lanzar error si es None.
 
-    Útil para endpoints que el superadmin también puede usar
-    (sin tenant) o donde el tenant es opcional para el filtro.
+    RESILIENCIA: si el claim del token no trae tenant (tokens emitidos
+    ANTES de que el usuario tuviera tenant — ej. justo después del
+    setup del taller), se consulta el perfil en la BD como respaldo.
+    Así un token "viejo" no rompe los endpoints con require_tenant.
 
     Retorna:
-        int  → si el usuario tiene tenant asignado
+        int  → si el usuario tiene tenant asignado (claim o BD)
         None → si es superadmin, cliente, o el perfil no tiene tenant aún
     """
     credentials_exception = HTTPException(
@@ -169,7 +174,21 @@ def get_tenant_id_opcional(token: str = Depends(oauth2_scheme)) -> Optional[int]
     except JWTError:
         raise credentials_exception
 
-    return payload.get("tenant_id")  # puede ser None
+    tenant_id = payload.get("tenant_id")
+    if tenant_id is not None:
+        return tenant_id
+
+    # ── Fallback a la BD: el claim no trae tenant ──
+    usuario_id_str = payload.get("sub")
+    if usuario_id_str:
+        usuario = get_usuario_by_id(db, int(usuario_id_str))
+        if usuario:
+            if usuario.perfil_administrador and usuario.perfil_administrador.tenant_id:
+                return usuario.perfil_administrador.tenant_id
+            if usuario.perfil_mecanico and usuario.perfil_mecanico.tenant_id:
+                return usuario.perfil_mecanico.tenant_id
+
+    return None
 
 
 def require_tenant(

@@ -263,10 +263,20 @@ export class IncidentesListComponent implements OnInit {
   }
 
   rechazarIncidente(id: number) {
-    if (confirm('¿Estás seguro de rechazar esta solicitud?')) {
-      this.incidentesPendientes = this.incidentesPendientes.filter(i => i.id !== id);
-      this.mostrarNotificacion('Solicitud rechazada');
+    if (!confirm('¿Estás seguro de rechazar esta solicitud?\nTu taller dejará de verla (seguirá disponible para otros talleres).')) {
+      return;
     }
+    // El rechazo se PERSISTE en el backend (asignación en estado 'rechazada'
+    // con el tenant del taller) — ya no reaparece al recargar la página
+    this.incidenteService.rechazarIncidente(id).subscribe({
+      next: () => {
+        this.incidentesPendientes = this.incidentesPendientes.filter(i => i.id !== id);
+        this.mostrarNotificacion('Solicitud rechazada. Ya no aparecerá en tu lista.');
+      },
+      error: (err) => {
+        this.mostrarError(err?.error?.detail || 'No se pudo rechazar la solicitud.');
+      }
+    });
   }
 
   verDetalle(inc: any) {

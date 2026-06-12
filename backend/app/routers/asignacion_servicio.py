@@ -47,11 +47,20 @@ def crear_nueva_asignacion(
     usuario: Usuario = Depends(get_current_administrador),
     db: Session = Depends(get_db),
 ):
-    existente = get_asignacion_por_incidente(db, datos.incidente_id)
-    if existente and existente.estado not in (
-        EstadoAsignacion.rechazada,
-        EstadoAsignacion.cancelado,
-    ):
+    # ¿Ya existe una asignación ACTIVA para este incidente?
+    # (consulta directa: pueden coexistir varias 'rechazadas' de otros
+    #  talleres sin que eso bloquee — pero solo UNA activa a la vez)
+    existente_activa = (
+        db.query(AsignacionServicio)
+        .filter(
+            AsignacionServicio.incidente_id == datos.incidente_id,
+            AsignacionServicio.estado.notin_(
+                [EstadoAsignacion.rechazada, EstadoAsignacion.cancelado]
+            ),
+        )
+        .first()
+    )
+    if existente_activa:
         raise HTTPException(
             status_code=400,
             detail="El incidente ya tiene una asignación activa"
@@ -138,6 +147,10 @@ def listar_asignaciones(
     else:
         q = q.filter(Mecanico.taller_id == taller_id)
 
+    # Las 'rechazadas' no se listan: son el registro persistente de
+    # "este taller rechazó el incidente", no asignaciones de trabajo
+    q = q.filter(AsignacionServicio.estado != EstadoAsignacion.rechazada)
+
     return q.order_by(AsignacionServicio.fecha_creacion.desc()).all()
 
 
@@ -196,11 +209,24 @@ def asignar_mecanico_a_asignacion(
             detail="El mecánico no pertenece a tu taller"
         )
 
+    estado_anterior = asignacion.estado
     asignacion.mecanico_id = mecanico.id
     if asignacion.estado == EstadoAsignacion.pendiente:
         asignacion.estado = EstadoAsignacion.taller_asignado
     if asignacion.fecha_respuesta is None:
         asignacion.fecha_respuesta = datetime.utcnow()
+
+    # Historial del cambio de estado (si lo hubo)
+    if estado_anterior != asignacion.estado:
+        from app.models.historial_estado import HistorialEstado
+        db.add(HistorialEstado(
+            asignacion_id=asignacion.id,
+            incidente_id=asignacion.incidente_id,
+            estado_anterior=estado_anterior.value if estado_anterior else None,
+            estado_actual=asignacion.estado.value,
+            observacion=f"Mecánico #{mecanico.id} asignado",
+        ))
+
     db.commit()
     db.refresh(asignacion)
 

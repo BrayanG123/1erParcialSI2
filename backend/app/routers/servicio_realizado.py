@@ -22,6 +22,8 @@ from app.core.dependencies import (
     get_current_cliente
 )
 from app.services.bitacora import BitacoraService
+from app.services.notificacion_service import notificar_cliente_cambio_estado
+from app.services.websocket_manager import manager
 
 
 router = APIRouter(prefix="/servicios-realizados", tags=["Servicios Realizados"])
@@ -33,7 +35,7 @@ router = APIRouter(prefix="/servicios-realizados", tags=["Servicios Realizados"]
     response_model=ServicioRealizadoRead,
     status_code=status.HTTP_201_CREATED,
 )
-def registrar_servicio(
+async def registrar_servicio(
     asignacion_id: int,
     datos: ServicioRealizadoCreate,
     usuario: Usuario = Depends(get_current_mecanico),
@@ -63,6 +65,42 @@ def registrar_servicio(
     actualizar_estado_asignacion(
         db, asignacion, AsignacionEstadoUpdate(estado=EstadoAsignacion.finalizado)
     )
+
+    # ── Notificar al cliente: servicio finalizado, califica y paga ───────
+    # (Fase 7 de la ruta crítica — este es el camino real con el que el
+    #  mecánico cierra el servicio, por eso la notificación va AQUÍ)
+    try:
+        incidente = asignacion.incidente
+        if incidente and incidente.cliente:
+            notificar_cliente_cambio_estado(
+                db=db,
+                cliente_usuario_id=incidente.cliente.usuario_id,
+                incidente_id=incidente.id,
+                mensaje=f"Tu servicio fue completado (Bs. {servicio.costo_final:.2f}). "
+                        "Por favor califícalo y realiza el pago desde la app.",
+                tipo="estado_asignacion",
+            )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error enviando push de finalizado: {e}")
+
+    # ── Emitir el cierre por WebSocket (el tracking del cliente se entera) ─
+    try:
+        await manager.broadcast(
+            incidente_id=asignacion.incidente_id,
+            mensaje={
+                "tipo": "cambio_estado",
+                "estado": EstadoAsignacion.finalizado.value,
+                "asignacion_id": asignacion.id,
+                "incidente_id": asignacion.incidente_id,
+                "mecanico": None,
+            },
+        )
+        # El servicio terminó: liberar la posición del mecánico en memoria
+        manager.limpiar_posicion(asignacion.incidente_id)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error emitiendo cierre por WebSocket: {e}")
 
     BitacoraService.registrar(
         db=db,

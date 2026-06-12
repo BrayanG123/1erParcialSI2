@@ -60,9 +60,18 @@ def crear_usuario(db: Session, datos: UsuarioCreate, taller_id: Optional[int] = 
         elif getattr(datos, "especialidad", None):
             especialidad_str = datos.especialidad.strip() or None
 
+        # El mecánico hereda el tenant de su taller (multi-tenant):
+        # sin esto, sus asignaciones/servicios nacían sin tenant.
+        tenant_id = None
+        if taller_id:
+            from app.models.taller import Taller
+            taller = db.query(Taller).filter(Taller.id == taller_id).first()
+            tenant_id = taller.tenant_id if taller else None
+
         perfil = Mecanico(
             usuario_id=nuevo_usuario.id,
             taller_id=taller_id,
+            tenant_id=tenant_id,
             especialidad=especialidad_str,
         )
         db.add(perfil)

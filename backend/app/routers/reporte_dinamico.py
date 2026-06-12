@@ -25,6 +25,28 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reportes", tags=["Reportes Dinámicos"])
 
 
+def _tenant_del_admin(usuario: Usuario) -> int:
+    """
+    Tenant del administrador (desde su perfil en BD).
+
+    AISLAMIENTO MULTI-TENANT: los reportes SIEMPRE se filtran por el
+    tenant del taller que consulta. Si el admin aún no tiene tenant,
+    se rechaza con 403 — jamás se devuelven datos de todos los talleres.
+    (Las entidades globales, como 'incidentes', no llevan tenant por diseño.)
+    """
+    tenant_id = (
+        usuario.perfil_administrador.tenant_id
+        if usuario.perfil_administrador else None
+    )
+    if tenant_id is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Tu cuenta no tiene un taller/tenant asignado. "
+                   "Configura tu taller (o cierra sesión y vuelve a entrar).",
+        )
+    return tenant_id
+
+
 @router.post("/qbe", response_model=QBEResponse)
 def generar_reporte_qbe(
     qbe: QBERequest,
@@ -39,7 +61,7 @@ def generar_reporte_qbe(
 
     Toda consulta queda aislada al tenant del administrador autenticado.
     """
-    tenant_id = usuario.perfil_administrador.tenant_id
+    tenant_id = _tenant_del_admin(usuario)
     return ejecutar_qbe(db, qbe, tenant_id)
 
 
@@ -86,7 +108,7 @@ def generar_reporte_desde_texto(
     if len(texto) > 1000:
         raise HTTPException(status_code=400, detail="El prompt es demasiado largo (máx. 1000 caracteres)")
 
-    tenant_id = usuario.perfil_administrador.tenant_id
+    tenant_id = _tenant_del_admin(usuario)
 
     # 1. Lenguaje natural → QBE
     try:
@@ -198,7 +220,7 @@ def exportar_reporte(
     Ejecuta el QBE y devuelve el reporte como archivo descargable
     (.xlsx o .pdf). Exporta hasta 1000 filas (el tope del motor).
     """
-    tenant_id = usuario.perfil_administrador.tenant_id
+    tenant_id = _tenant_del_admin(usuario)
     nombre, contenido, mime, _ = _generar_archivo_reporte(db, qbe, tenant_id, formato)
 
     return Response(
@@ -234,7 +256,7 @@ def enviar_reporte_por_correo(
                    "SMTP_PASSWORD en el .env). Ver REPORTES-EXPORTAR-CORREO.md.",
         )
 
-    tenant_id = usuario.perfil_administrador.tenant_id
+    tenant_id = _tenant_del_admin(usuario)
     nombre, contenido, mime, resultado = _generar_archivo_reporte(
         db, datos.qbe, tenant_id, datos.formato
     )

@@ -1,5 +1,7 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.models.taller import Taller
+from app.models.tenant import Tenant
 from app.models.usuario import Administrador
 from app.schemas.taller import TallerCreate, TallerUpdate, TallerRead
 
@@ -22,22 +24,34 @@ def get_talleres(db: Session, skip: int = 0, limit: int = 100) -> list[Taller]:
 
 
 def crear_taller(db: Session, admin_id: int, datos: TallerCreate):
-    # 1. Crear el taller
+    # 0. Verificar que el nombre del taller no esté ya tomado como tenant
+    existe_tenant = db.query(Tenant).filter(Tenant.nombre == datos.nombre).first()
+    if existe_tenant:
+        raise HTTPException(status_code=400, detail="Ya existe un taller registrado con ese nombre")
+
+    # 1. Crear el Tenant 1:1 asociado al taller
+    nuevo_tenant = Tenant(nombre=datos.nombre)
+    db.add(nuevo_tenant)
+    db.flush()  # Obtener nuevo_tenant.id sin commit
+
+    # 2. Crear el Taller con el tenant_id asignado
     nuevo_taller = Taller(
         nombre=datos.nombre,
         direccion=datos.direccion,
         telefono=datos.telefono,
         latitud=datos.latitud,
         longitud=datos.longitud,
+        tenant_id=nuevo_tenant.id,
     )
     db.add(nuevo_taller)
-    db.flush() # Para obtener el ID del taller sin hacer commit
+    db.flush()  # Obtener nuevo_taller.id sin commit
 
-    # 2. Sincronizar el perfil Administrador (Administrador.taller_id)
+    # 3. Sincronizar el perfil Administrador: taller_id y tenant_id
     admin = db.query(Administrador).filter(Administrador.id == admin_id).first()
     if admin:
         admin.taller_id = nuevo_taller.id
-    
+        admin.tenant_id = nuevo_tenant.id
+
     db.commit()
     db.refresh(nuevo_taller)
     return nuevo_taller
